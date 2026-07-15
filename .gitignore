@@ -13,10 +13,10 @@ yarn-error.log*
 /.angular
 
 # Database
-db/*.sqlite
-db/*.db
-*.sqlite
-*.db
+db/*.sqlite*
+db/*.db*
+*.sqlite*
+*.db*
 
 # Process uploads/temp directories
 uploads/*

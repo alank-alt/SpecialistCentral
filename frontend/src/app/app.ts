@@ -16,6 +16,11 @@ interface FuzzyResult {
   id: string;
 }
 
+interface TranslationRow {
+  key: string;
+  value: string;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -37,15 +42,75 @@ export class App implements OnInit, AfterViewInit {
   selectedZapisInventoryFile: File | null = null;
   selectedMatchFile: File | null = null;
 
-  // Configuration options
+  // Configuration options (per-tab company IDs)
+  booksyCompanyId: string = '1299847';
+  dikidiCompanyId: string = '1299847';
+  zapisCompanyId: string = '1299847';
+  clientsCompanyId: string = '1299847';
+  transCompanyId: string = '1299847';
+
+  // Global Auth Tokens (Settings)
+  apiToken: string = '';
+  userToken: string = '';
+
+  // Parser options
   booksyThreshold: number = 70.0;
   matchThreshold: number = 70.0;
-  companyId: string = '';
-  apiToken: string = '';
+  
+  // Translation tool files
+  selectedTransFile: File | null = null;
+  translationsTextPaste: string = '';
+  translationMatchMode: string = 'byName';
+  translationMode: string = 'services';
+  
+  // Text match inputs
   textMain: string = '';
   textLib: string = '';
-  clientsCsv: string = '';
-  translationsJson: string = '';
+  selectedClientsFile: File | null = null;
+  clientsTextPaste: string = '';
+  
+  // Translations dynamic rows
+  translationRows: TranslationRow[] = [
+    { key: 'created_booking_page_title', value: 'Ваша запись находится на рассмотрении' }
+  ];
+  selectedLanguage: string = '2'; // Default English
+  languagesList = [
+    { id: 1, name: 'Russian (Русский)' },
+    { id: 2, name: 'English (Английский)' },
+    { id: 3, name: 'German (Немецкий)' },
+    { id: 4, name: 'Latvian (Латышский)' },
+    { id: 5, name: 'Estonian (Эстонский)' },
+    { id: 6, name: 'Lithuanian (Литовский)' },
+    { id: 7, name: 'Ukrainian (Украинский)' },
+    { id: 8, name: 'French (Французский)' },
+    { id: 9, name: 'Italian (Итальянский)' },
+    { id: 10, name: 'Spanish (Испанский)' },
+    { id: 11, name: 'Chinese (Китайский)' },
+    { id: 12, name: 'Turkish (Турецкий)' },
+    { id: 13, name: 'Georgian (Грузинский)' },
+    { id: 14, name: 'Armenian (Армянский)' },
+    { id: 15, name: 'Kazakh (Казахский)' },
+    { id: 16, name: 'Croatian (Хорватский)' },
+    { id: 17, name: 'Czech (Чешский)' },
+    { id: 18, name: 'Romanian (Румынский)' },
+    { id: 20, name: 'Arabic (Арабский)' },
+    { id: 21, name: 'Bulgarian (Болгарский)' },
+    { id: 22, name: 'Hebrew (Иврит)' },
+    { id: 23, name: 'Hungarian (Венгерский)' },
+    { id: 24, name: 'Serbian (Сербский)' },
+    { id: 25, name: 'Slovak (Словацкий)' },
+    { id: 26, name: 'Mongolian (Монгольский)' },
+    { id: 27, name: 'Azeri (Азербайджанский)' },
+    { id: 28, name: 'Polish (Польский)' },
+    { id: 29, name: 'Slovenian (Словенский)' },
+    { id: 32, name: 'Greek (Греческий)' },
+    { id: 33, name: 'Danish (Датский)' },
+    { id: 34, name: 'Finnish (Финский)' },
+    { id: 35, name: 'Portuguese (Португальский)' },
+    { id: 36, name: 'Uzbek (Узбекский)' },
+    { id: 37, name: 'English technical (Английский технический)' },
+    { id: 38, name: 'Japanese (Японский)' }
+  ];
 
   textMatchResults: FuzzyResult[] = [];
 
@@ -59,8 +124,13 @@ export class App implements OnInit, AfterViewInit {
 
   // Widget lab and gallery
   widgetScripts: ScriptItem[] = [];
-  selectedWidgetScriptName: string = '';
+  tampermonkeyScripts: ScriptItem[] = [];
+  
+  activeWidgetScriptName: string = '';
+  widgetScriptNameInput: string = '';
   activeCode: string = '';
+  widgetLabEditMode: boolean = false;
+  widgetScriptIsNew: boolean = false;
 
   // Wiki articles
   wikiArticles: string[] = [];
@@ -78,19 +148,9 @@ export class App implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.loadWidgetScriptsList();
+    this.loadTampermonkeyScriptsList();
     this.loadWikiArticlesList();
     this.loadSettings();
-  }
-
-  loadSettings() {
-    this.http.get<Record<string, string>>('/api/settings').subscribe({
-      next: (data) => {
-        if (data['company_id']) this.companyId = data['company_id'];
-        if (data['api_token']) this.apiToken = data['api_token'];
-        this.cdr.detectChanges();
-      },
-      error: (err) => console.error('Failed to load settings', err)
-    });
   }
 
   ngAfterViewInit() {
@@ -106,7 +166,11 @@ export class App implements OnInit, AfterViewInit {
     this.currentJobId = null;
 
     if (tab === 'widget-lab') {
+      this.widgetLabEditMode = false;
+      this.loadWidgetScriptsList();
       setTimeout(() => this.resetSimulationSandbox(), 100);
+    } else if (tab === 'tampermonkey') {
+      this.loadTampermonkeyScriptsList();
     }
   }
 
@@ -117,8 +181,44 @@ export class App implements OnInit, AfterViewInit {
       case 'widget-lab': return 'Widget Customization Lab';
       case 'tampermonkey': return 'Tampermonkey Gallery';
       case 'wiki': return 'Knowledge Base';
+      case 'settings': return 'Global API Credentials';
       default: return 'Dashboard';
     }
+  }
+
+  // --- SETTINGS (CREDENTIALS) HANDLERS ---
+  loadSettings() {
+    this.http.get<Record<string, string>>('/api/settings').subscribe({
+      next: (data) => {
+        if (data['api_token']) this.apiToken = data['api_token'];
+        if (data['user_token']) this.userToken = data['user_token'];
+        if (data['company_id']) {
+          const cid = data['company_id'];
+          this.booksyCompanyId = cid;
+          this.dikidiCompanyId = cid;
+          this.zapisCompanyId = cid;
+          this.clientsCompanyId = cid;
+          this.transCompanyId = cid;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load settings', err)
+    });
+  }
+
+  saveSettings() {
+    // Save tokens and the booksyCompanyId as the default company_id in settings
+    this.http.post('/api/settings', {
+      api_token: this.apiToken,
+      user_token: this.userToken,
+      company_id: this.booksyCompanyId
+    }).subscribe({
+      next: () => {
+        alert('Credentials successfully saved to SQLite database.');
+        this.loadSettings(); // reload
+      },
+      error: (err) => alert('Failed to save credentials: ' + err.message)
+    });
   }
 
   // --- FILE SELECTIONS ---
@@ -132,6 +232,8 @@ export class App implements OnInit, AfterViewInit {
     if (field === 'zapisVisitsFile') this.selectedZapisVisitsFile = file;
     if (field === 'zapisInventoryFile') this.selectedZapisInventoryFile = file;
     if (field === 'matchFile') this.selectedMatchFile = file;
+    if (field === 'transFile') this.selectedTransFile = file;
+    if (field === 'clientsFile') this.selectedClientsFile = file;
   }
 
   // --- JOB STREAM LOGGER ---
@@ -197,12 +299,15 @@ export class App implements OnInit, AfterViewInit {
       if (this.selectedStaffFile) formData.append('staffFile', this.selectedStaffFile);
       if (this.selectedServicesFile) formData.append('servicesFile', this.selectedServicesFile);
       formData.append('threshold', String(this.booksyThreshold));
+      formData.append('companyId', this.booksyCompanyId);
     } else if (type === 'Dikidi') {
       if (this.selectedDikidiVisitsFile) formData.append('visitsFile', this.selectedDikidiVisitsFile);
       if (this.selectedWorksheetFile) formData.append('worksheetFile', this.selectedWorksheetFile);
+      formData.append('companyId', this.dikidiCompanyId);
     } else if (type === 'Zapis.kz') {
       if (this.selectedZapisVisitsFile) formData.append('visitsFile', this.selectedZapisVisitsFile);
       if (this.selectedZapisInventoryFile) formData.append('inventoryFile', this.selectedZapisInventoryFile);
+      formData.append('companyId', this.zapisCompanyId);
     }
 
     this.http.post<{ jobId: string }>('/api/parsers/upload', formData).subscribe({
@@ -243,43 +348,47 @@ export class App implements OnInit, AfterViewInit {
   }
 
   syncClientsToAltegio() {
-    const clientsList = this.clientsCsv.split('\n')
-      .map(line => {
-        const parts = line.split(',');
-        return { name: parts[0]?.trim(), phone: parts[1]?.trim() };
-      })
-      .filter(c => c.name && c.phone);
+    const formData = new FormData();
+    formData.append('companyId', this.clientsCompanyId);
+    formData.append('token', this.apiToken);
+    formData.append('userToken', this.userToken);
+    
+    if (this.selectedClientsFile) {
+      formData.append('clientsFile', this.selectedClientsFile);
+    }
+    if (this.clientsTextPaste) {
+      formData.append('clientsText', this.clientsTextPaste);
+    }
 
-    this.http.post<{ jobId: string }>('/api/tools/upload-clients', {
-      clientsList,
-      companyId: this.companyId,
-      token: this.apiToken
-    }).subscribe({
+    this.http.post<{ jobId: string }>('/api/tools/upload-clients', formData).subscribe({
       next: (res) => this.startLogsStream(res.jobId),
-      error: (err) => alert('Failed to sync: ' + err.message)
+      error: (err) => alert('Failed to sync clients: ' + (err.error?.error || err.message))
     });
   }
 
   syncTranslationsToAltegio() {
-    let translations = {};
-    try {
-      translations = JSON.parse(this.translationsJson);
-    } catch (e) {
-      alert('Translations Map must be valid JSON');
-      return;
+    const formData = new FormData();
+    formData.append('companyId', this.transCompanyId);
+    formData.append('token', this.apiToken);
+    formData.append('userToken', this.userToken);
+    formData.append('matchMode', this.translationMatchMode);
+    formData.append('targetLanguage', this.selectedLanguage);
+    formData.append('translationMode', this.translationMode);
+    
+    if (this.selectedTransFile) {
+      formData.append('translationsFile', this.selectedTransFile);
+    }
+    if (this.translationsTextPaste) {
+      formData.append('translationsText', this.translationsTextPaste);
     }
 
-    this.http.post<{ jobId: string }>('/api/tools/upload-translations', {
-      translations,
-      companyId: this.companyId,
-      token: this.apiToken
-    }).subscribe({
+    this.http.post<{ jobId: string }>('/api/tools/upload-translations', formData).subscribe({
       next: (res) => this.startLogsStream(res.jobId),
-      error: (err) => alert('Failed to sync: ' + err.message)
+      error: (err) => alert('Failed to sync: ' + (err.error?.error || err.message))
     });
   }
 
-  // --- WIDGET SCRIPTS GALLERY & sandboxed SIMULATION ---
+  // --- WIDGET SCRIPTS GALLERY & CRUD ---
   loadWidgetScriptsList() {
     this.http.get<ScriptItem[]>('/api/scripts').subscribe({
       next: (data) => {
@@ -290,21 +399,81 @@ export class App implements OnInit, AfterViewInit {
     });
   }
 
-  onWidgetScriptSelect(event: any) {
-    const name = event.target.value;
-    this.selectedWidgetScriptName = name;
-    if (!name) {
-      this.activeCode = '';
-      return;
-    }
+  loadTampermonkeyScriptsList() {
+    this.http.get<ScriptItem[]>('/api/tampermonkey').subscribe({
+      next: (data) => {
+        this.tampermonkeyScripts = data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load Tampermonkey list', err)
+    });
+  }
+
+  selectWidgetScript(name: string) {
+    this.activeWidgetScriptName = name;
+    this.widgetScriptNameInput = name;
+    this.widgetScriptIsNew = false;
 
     this.http.get(`/api/scripts/content?name=${name}`, { responseType: 'text' }).subscribe({
       next: (code) => {
         this.activeCode = code;
-        this.resetSimulationSandbox();
+        this.widgetLabEditMode = true;
+        this.cdr.detectChanges();
+        setTimeout(() => this.resetSimulationSandbox(), 50);
       },
       error: (err) => alert('Failed to read script contents')
     });
+  }
+
+  startCreateWidgetScript() {
+    this.activeWidgetScriptName = '';
+    this.widgetScriptNameInput = '';
+    this.activeCode = '<script>\n  console.log("Custom script ready");\n</script>';
+    this.widgetScriptIsNew = true;
+    this.widgetLabEditMode = true;
+    this.cdr.detectChanges();
+    setTimeout(() => this.resetSimulationSandbox(), 50);
+  }
+
+  saveWidgetScript() {
+    const filename = this.widgetScriptNameInput.trim();
+    if (!filename) {
+      alert('File name is required');
+      return;
+    }
+
+    if (!filename.endsWith('.html') && !filename.endsWith('.js')) {
+      alert('File name must end with .html or .js');
+      return;
+    }
+
+    this.http.post('/api/scripts/save', {
+      name: filename,
+      content: this.activeCode
+    }).subscribe({
+      next: () => {
+        alert('Script successfully saved.');
+        this.widgetLabEditMode = false;
+        this.loadWidgetScriptsList();
+      },
+      error: (err) => alert('Failed to save script: ' + (err.error?.error || err.message))
+    });
+  }
+
+  deleteWidgetScript(name: string) {
+    if (confirm(`Are you sure you want to delete widget script: ${name}?`)) {
+      this.http.delete(`/api/scripts/delete?name=${name}`).subscribe({
+        next: () => {
+          this.loadWidgetScriptsList();
+        },
+        error: (err) => alert('Failed to delete: ' + err.message)
+      });
+    }
+  }
+
+  exitWidgetLabEditor() {
+    this.widgetLabEditMode = false;
+    this.loadWidgetScriptsList();
   }
 
   copyCodeToClipboard() {
@@ -400,13 +569,11 @@ export class App implements OnInit, AfterViewInit {
       const scriptNode = doc.createElement('script');
       scriptNode.type = 'text/javascript';
       
-      // Inject code directly, resolving standard script-only and HTML script wrappers
       let executable = this.activeCode;
       if (executable.trim().startsWith('<script>')) {
         executable = executable.replace(/<script>/g, '').replace(/<\/script>/g, '');
       }
       
-      // Append styles if style tag is inside HTML code
       const styleMatches = [...this.activeCode.matchAll(/<style>([\s\S]*?)<\/style>/g)];
       styleMatches.forEach(m => {
         const styleNode = doc.createElement('style');
@@ -420,7 +587,6 @@ export class App implements OnInit, AfterViewInit {
   }
 
   oneClickInstall(name: string) {
-    // Open install script endpoint
     window.open(`/scripts/download/${name}`, '_blank');
   }
 
@@ -513,30 +679,23 @@ export class App implements OnInit, AfterViewInit {
     }
   }
 
-  // Extremely lightweight Markdown to HTML parser
   private parseMarkdown(markdown: string): string {
     if (!markdown) return '';
     let html = markdown;
 
-    // Headers
     html = html.replace(/^# (.*?)$/gm, '<h1 class="wiki-h1">$1</h1>');
     html = html.replace(/^## (.*?)$/gm, '<h2 class="wiki-h2">$1</h2>');
     html = html.replace(/^### (.*?)$/gm, '<h3 class="wiki-h3">$1</h3>');
 
-    // Bold/Italics
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
 
-    // Bullet points
     html = html.replace(/^\- (.*?)$/gm, '<li>$1</li>');
     html = html.replace(/(<li>.*?<\/li>)/g, '<ul style="margin-left: 20px;">$1</ul>');
-    // clean overlapping ul groups
     html = html.replace(/<\/ul>\s*<ul style="margin-left: 20px;">/g, '');
 
-    // Code blocks
-    html = html.replace(/`(.*?)`/g, '<code style="background-color: #1a1a24; padding: 2px 6px; color: var(--gold-light); font-family: monospace;">$1</code>');
+    html = html.replace(/`(.*?)`/g, '<code style="background-color: #15151a; padding: 2px 6px; color: var(--gold-light); font-family: monospace;">$1</code>');
 
-    // Paragraphs / Linebreaks
     html = html.replace(/^(?!<h|<ul|<li|<ol)(.*?)$/gm, '<p>$1</p>');
     html = html.replace(/<p><\/p>/g, '');
 
