@@ -1,0 +1,173 @@
+<script>
+  (function() {
+    // The formatted Privacy Policy HTML
+    const privacyPolicyHTML = `
+      <div style="font-size: 14px; color: #555;">
+        <p><strong>Last updated: March 2026</strong></p>
+        <p>This Privacy Policy describes how personal data is collected, used and shared when you use the mobile application ________ (the "Application").</p>
+        
+        <p><strong>The Application is published and operated by:</strong><br>
+        [LEGAL NAME OF BUSINESS]<br>
+        Address: [BUSINESS ADDRESS]<br>
+        Email: [CONTACT EMAIL]</p>
+        
+        <p>For the purposes of applicable data protection laws, including Regulation (EU) 2016/679 (GDPR), ________ acts as the Data Controller and determines the purposes and means of processing personal data collected through the Application.</p>
+        <p>The Application is technically powered by the Altegio platform. In this context: Altegio Limited acts as a Data Processor, providing technical infrastructure and data processing services on behalf of the Business.</p>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">1. Information We Collect</h3>
+        <p>When you use the Application, we may collect the following categories of information.</p>
+        <p><strong>Information you provide directly</strong><br>When using the Application, you may provide:</p>
+        <ul style="margin-top: 5px; padding-left: 20px;">
+          <li>name and surname</li>
+          <li>phone number</li>
+          <li>email address</li>
+          <li>appointment booking information</li>
+          <li>services requested</li>
+          <li>messages or comments submitted via the Application</li>
+        </ul>
+        <p><strong>Automatically collected information</strong><br>When you use the Application, certain information may be collected automatically, including:</p>
+        <ul style="margin-top: 5px; padding-left: 20px;">
+          <li>device type</li>
+          <li>operating system and version</li>
+          <li>device identifiers</li>
+          <li>IP address</li>
+          <li>application usage data</li>
+          <li>language and regional settings</li>
+        </ul>
+        <p>This information helps ensure proper functioning of the Application and improve service quality.</p>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">2. How We Use Your Information</h3>
+        <p>Your information may be used for the following purposes:</p>
+        <ul style="margin-top: 5px; padding-left: 20px;">
+          <li>to provide appointment booking services</li>
+          <li>to manage and confirm bookings</li>
+          <li>to communicate with you regarding appointments or services</li>
+          <li>to provide customer support</li>
+          <li>to improve the functionality and performance of the Application</li>
+          <li>to comply with legal obligations</li>
+        </ul>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">3. Legal Basis for Processing (GDPR)</h3>
+        <p>Where GDPR applies, personal data is processed on the following legal bases:</p>
+        <ul style="margin-top: 5px; padding-left: 20px;">
+          <li>performance of a contract (e.g., booking and service delivery)</li>
+          <li>legitimate interests of the Business (service improvement, fraud prevention)</li>
+          <li>compliance with legal obligations</li>
+          <li>user consent (where required)</li>
+        </ul>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">4. Data Sharing</h3>
+        <p>Personal data may be processed and stored on cloud infrastructure operated by hosting providers engaged by Altegio. Such providers act as sub-processors and process personal data solely for the purpose of providing the technical infrastructure necessary for the operation of the Application.</p>
+        <p><strong>Service providers</strong><br>The Business may engage third-party service providers that assist in operating and supporting the Application, including providers of technical support, customer communication tools and other operational services. Such service providers process personal data solely on behalf of the Business and only for the purposes described in this Privacy Policy.</p>
+        <p><strong>Altegio Platform</strong><br>The Application operates using the Altegio platform infrastructure. In this context: Altegio Limited processes personal data solely as a Data Processor, acting on behalf of the Business and in accordance with its instructions. Altegio does not use personal data for its own independent purposes.</p>
+        <p><strong>Legal requirements</strong><br>Personal data may also be disclosed:</p>
+        <ul style="margin-top: 5px; padding-left: 20px;">
+          <li>when required by law</li>
+          <li>in response to lawful requests from authorities</li>
+          <li>to protect legal rights or prevent fraud</li>
+        </ul>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">5. Data Retention</h3>
+        <p>Personal data is retained only for as long as necessary to:</p>
+        <ul style="margin-top: 5px; padding-left: 20px;">
+          <li>provide services through the Application</li>
+          <li>fulfill contractual obligations</li>
+          <li>comply with legal requirements</li>
+        </ul>
+        <p>After this period, personal data may be deleted or anonymized.</p>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">6. Data Security</h3>
+        <p>Appropriate technical and organizational measures are implemented to protect personal data against:</p>
+        <ul style="margin-top: 5px; padding-left: 20px;">
+          <li>unauthorized access</li>
+          <li>loss</li>
+          <li>misuse</li>
+          <li>alteration or disclosure</li>
+        </ul>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">7. Your Rights</h3>
+        <p>Depending on your jurisdiction, you may have the following rights regarding your personal data:</p>
+        <ul style="margin-top: 5px; padding-left: 20px;">
+          <li>right to access personal data</li>
+          <li>right to correct inaccurate data</li>
+          <li>right to request deletion of data</li>
+          <li>right to restrict processing</li>
+          <li>right to data portability</li>
+          <li>right to object to processing</li>
+        </ul>
+        <p>To exercise these rights, please contact: [CONTACT EMAIL]</p>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">8. Children's Privacy</h3>
+        <p>The Application is not intended for use by children under the age of 16. We do not knowingly collect personal data from children. If you believe that a child has provided personal data through the Application, please contact us so that the information can be removed.</p>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">9. Changes to This Privacy Policy</h3>
+        <p>This Privacy Policy may be updated from time to time. Any changes will be posted within the Application or on the Business website.</p>
+
+        <h3 style="color: #292b33; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">10. Contact Information</h3>
+        <p>If you have any questions about this Privacy Policy or the processing of your personal data, please contact:</p>
+        <p>[LEGAL NAME OF BUSINESS]<br>Address: [BUSINESS ADDRESS]<br>Email: [CONTACT EMAIL]</p>
+      </div>
+    `;
+
+    const TRANSLATIONS = {
+        en: {
+            MODAL_TITLE: "Privacy Policy",
+            MODAL_DESCRIPTION: privacyPolicyHTML,
+            BUTTON_TEXT: "I Agree",
+            TRIGGER_BUTTON: "Privacy Policy",
+            DATA_DELETION_BTN: "Request Data Deletion"
+        }
+    };
+    
+    const DEFAULT_LANG = 'en'; 
+    const loadedWithNotice = window.location.href.indexOf('(legal-notice)') !== -1;
+    const loadedWithDelete = window.location.href.indexOf('(data-delete)') !== -1;
+    
+    let urlPersistInterval; 
+    let dataDeleteUrlInterval;
+
+    // --- PRIVACY POLICY LOGIC ---
+    window.showConsentModal = function() {
+        if (window.location.href.indexOf('(legal-notice)') === -1) {
+            const newUrl = window.location.href + '(legal-notice)';
+            window.history.pushState({ path: newUrl }, '', newUrl);
+        }
+        injectModal();
+    };
+
+    function injectModal() {
+        if (document.getElementById('custom-consent-overlay')) return;
+        
+        let htmlLang = (document.documentElement.lang || DEFAULT_LANG).toLowerCase().substring(0, 2);
+        const texts = TRANSLATIONS[htmlLang] || TRANSLATIONS[DEFAULT_LANG];
+        
+        var overlay = document.createElement('div');
+        overlay.id = 'custom-consent-overlay';
+        overlay.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0, 0, 0, 0.6) !important; backdrop-filter: blur(15px) !important; -webkit-backdrop-filter: blur(15px) !important; display: flex !important; justify-content: center !important; align-items: center !important; z-index: 2147483647 !important; pointer-events: auto !important;';
+        
+        overlay.innerHTML = `
+           <div id="custom-consent-modal-box" style="background: #ffffff !important; padding: 30px 20px !important; border-radius: 20px !important; box-shadow: 0 20px 50px rgba(0,0,0,0.3) !important; text-align: center !important; font-family: 'Inter', sans-serif !important; max-width: 550px !important; width: 90% !important; max-height: 85vh !important; display: flex !important; flex-direction: column !important; border: 2px solid #fcce2c !important; box-sizing: border-box !important;">
+                <h1 style="margin-top: 0 !important; margin-bottom: 15px !important; color: #292b33 !important; font-size: 26px !important; font-weight: 800 !important; flex-shrink: 0 !important;">${texts.MODAL_TITLE}</h1>
+                <div style="flex-grow: 1 !important; overflow-y: auto !important; margin-bottom: 25px !important; text-align: left !important; padding-right: 5px !important; line-height: 1.6 !important;">
+                    ${texts.MODAL_DESCRIPTION}
+                </div>
+                <button onclick="acceptConsent()" style="background: #292b33 !important; color: #ffffff !important; border: none !important; padding: 15px 30px !important; border-radius: 12px !important; font-size: 16px !important; font-weight: 700 !important; cursor: pointer !important; transition: all 0.2s !important; flex-shrink: 0 !important;">${texts.BUTTON_TEXT}</button>
+           </div>
+        `;
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.acceptConsent = function() {
+        var overlay = document.getElementById('custom-consent-overlay');
+        if (overlay) overlay.remove();
+        document.body.style.overflow = '';
+        localStorage.setItem('custom-legal-notice-accepted', 'true');
+        
+        if (window.location.href.indexOf('(legal-notice)') !== -1) {
+            const cleanUrl = window.location.href.replace('(legal-notice)', '');
+            window.history.pushState({ path: cleanUrl }, '', cleanUrl);
+        }
+    };
+  })();
+</script>

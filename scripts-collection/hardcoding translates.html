@@ -1,0 +1,43 @@
+<script>
+(function() {
+    const CONFIG = {
+        stateAttributes: {
+            processedLang: 'data-hardcoded-lang'
+        },
+        checkIntervalMs: 500,
+        // REPLACE WITH YOUR ACTUAL SELECTORS AND TRANSLATIONS
+        translations: {
+            '[data-locator="QUESTION_SELECTOR_1_PLACEHOLDER"] .select-title': {
+                "lv-LV": "Vai jūsu mājdzīvniekam ir veiktas visas nepieciešamās potes?",
+                "en-US": "Has your pet received all the necessary vaccinations?",
+                "ru-RU": "Все ли необходимые прививки сделаны у вашего питомца?",
+                "default": "Has your pet received all the necessary vaccinations?"
+            },
+            '[data-locator="QUESTION_SELECTOR_2_PLACEHOLDER"] .select-title': {
+                "lv-LV": "Vai jūsu mājdzīvniekam ir zināmas alerģijas?",
+                "en-US": "Does your pet have any known allergies?",
+                "ru-RU": "Есть ли у вашего питомца известные аллергии?",
+                "default": "Does your pet have any known allergies?"
+            }
+        }
+    };
+    function applyHardcodedTranslations() {
+        const currentLang = document.documentElement.lang || "default";
+        for (const selector in CONFIG.translations) {
+            if (CONFIG.translations.hasOwnProperty(selector)) {
+                const langOptions = CONFIG.translations[selector];
+                const targetText = langOptions[currentLang] !== undefined 
+                    ? langOptions[currentLang] 
+                    : langOptions["default"];
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    if (el.getAttribute(CONFIG.stateAttributes.processedLang) !== currentLang) {
+                        el.textContent = targetText;
+                        el.setAttribute(CONFIG.stateAttributes.processedLang, currentLang);
+                    }
+                });
+            }
+        }
+    }
+    setInterval(applyHardcodedTranslations, CONFIG.checkIntervalMs);
+})();</script>

@@ -1,0 +1,531 @@
+<div class="dashboard-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo-section">
+      <h1>Specialist</h1>
+      <p>Central</p>
+      <div class="logo-divider"></div>
+      <p style="font-size: 8px; letter-spacing: 2px;">Art-Deco Automation Hub</p>
+    </div>
+
+    <ul class="nav-links">
+      <li class="nav-item">
+        <button class="nav-btn" [class.active]="activeTab === 'parsers'" (click)="setActiveTab('parsers')">
+          <span class="icon">⚙️</span> Parsing Center
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" [class.active]="activeTab === 'tools'" (click)="setActiveTab('tools')">
+          <span class="icon">🛠️</span> Upload & Match
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" [class.active]="activeTab === 'widget-lab'" (click)="setActiveTab('widget-lab')">
+          <span class="icon">⚡</span> Widget Lab
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" [class.active]="activeTab === 'tampermonkey'" (click)="setActiveTab('tampermonkey')">
+          <span class="icon">🐒</span> Tampermonkey
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" [class.active]="activeTab === 'wiki'" (click)="setActiveTab('wiki')">
+          <span class="icon">📖</span> Knowledge Base
+        </button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div>Form & Function</div>
+      <div style="font-size: 8px; margin-top: 5px; opacity: 0.5;">v1.0.0</div>
+    </div>
+  </aside>
+
+  <!-- Main Viewport -->
+  <main class="main-viewport">
+    <header class="main-header">
+      <h2>{{ getTabTitle() }}</h2>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        Altegio Online
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- ================= MODULE A: PARSING CENTER ================= -->
+      <div *ngIf="activeTab === 'parsers'">
+        <div class="deco-card">
+          <div class="deco-card-title">
+            <span>CRM Source File Parsers</span>
+          </div>
+
+          <div class="deco-tabs">
+            <button class="deco-tab-btn" [class.active]="activeParserTab === 'booksy'" (click)="activeParserTab = 'booksy'">Booksy</button>
+            <button class="deco-tab-btn" [class.active]="activeParserTab === 'dikidi'" (click)="activeParserTab = 'dikidi'">Dikidi</button>
+            <button class="deco-tab-btn" [class.active]="activeParserTab === 'zapis'" (click)="activeParserTab = 'zapis'">Zapis.kz</button>
+          </div>
+
+          <!-- Booksy Parser Tab -->
+          <div *ngIf="activeParserTab === 'booksy'">
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
+              Fuzzy matches Booksy exports (Bookings, Staff list, and Services sheet) to map master & service IDs for Altegio uploads.
+            </p>
+            
+            <div class="grid-3">
+              <div>
+                <label class="form-label">Bookings Excel (.xlsx)</label>
+                <div class="upload-zone" (click)="bookingsInput.click()">
+                  <div class="icon">📥</div>
+                  <h4>Visits File</h4>
+                  <p>{{ selectedBookingsFile ? selectedBookingsFile.name : 'Drag & drop or Click to select' }}</p>
+                  <input #bookingsInput type="file" (change)="onFileChange($event, 'bookingsFile')">
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Staff Excel (.xlsx)</label>
+                <div class="upload-zone" (click)="staffInput.click()">
+                  <div class="icon">👥</div>
+                  <h4>Staff & IDs</h4>
+                  <p>{{ selectedStaffFile ? selectedStaffFile.name : 'Drag & drop or Click to select' }}</p>
+                  <input #staffInput type="file" (change)="onFileChange($event, 'staffFile')">
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Services Excel (.xls/.xlsx)</label>
+                <div class="upload-zone" (click)="servicesInput.click()">
+                  <div class="icon">💅</div>
+                  <h4>Services Export</h4>
+                  <p>{{ selectedServicesFile ? selectedServicesFile.name : 'Drag & drop or Click to select' }}</p>
+                  <input #servicesInput type="file" (change)="onFileChange($event, 'servicesFile')">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" style="max-width: 250px; margin-top: 10px;">
+              <label class="form-label">Min Match Similarity %</label>
+              <input type="number" class="form-control" [(ngModel)]="booksyThreshold" min="0" max="100" step="0.5">
+            </div>
+
+            <div style="margin-top: 25px;">
+              <button class="deco-btn" [disabled]="!selectedBookingsFile || !selectedStaffFile || !selectedServicesFile || isJobRunning" (click)="runParser('Booksy')">
+                ⚡ Run Booksy Parser
+              </button>
+            </div>
+          </div>
+
+          <!-- Dikidi Parser Tab -->
+          <div *ngIf="activeParserTab === 'dikidi'">
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
+              Generates unique list sheets (employees, services, clients) and formats visits price columns with '##0' formatting.
+            </p>
+            
+            <div class="grid-2">
+              <div>
+                <label class="form-label">Dikidi Visits Export (.xlsx)</label>
+                <div class="upload-zone" (click)="dikidiVisitsInput.click()">
+                  <div class="icon">📥</div>
+                  <h4>Visits File</h4>
+                  <p>{{ selectedDikidiVisitsFile ? selectedDikidiVisitsFile.name : 'Drag & drop or Click to select' }}</p>
+                  <input #dikidiVisitsInput type="file" (change)="onFileChange($event, 'dikidiVisitsFile')">
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Worksheet Mapping (Optional .xlsx)</label>
+                <div class="upload-zone" (click)="worksheetInput.click()">
+                  <div class="icon">📋</div>
+                  <h4>Worksheet IDs Lookup</h4>
+                  <p>{{ selectedWorksheetFile ? selectedWorksheetFile.name : 'Drag & drop or Click to select' }}</p>
+                  <input #worksheetInput type="file" (change)="onFileChange($event, 'worksheetFile')">
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+              <button class="deco-btn" [disabled]="!selectedDikidiVisitsFile || isJobRunning" (click)="runParser('Dikidi')">
+                ⚡ Run Dikidi Parser
+              </button>
+            </div>
+          </div>
+
+          <!-- Zapis.kz Parser Tab -->
+          <div *ngIf="activeParserTab === 'zapis'">
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
+              Extracts visits and inventory datasets from Zapis.kz export sheets for standard Altegio imports.
+            </p>
+            
+            <div class="grid-2">
+              <div>
+                <label class="form-label">Zapis.kz Visits File (.xlsx)</label>
+                <div class="upload-zone" (click)="zapisVisitsInput.click()">
+                  <div class="icon">📥</div>
+                  <h4>Visits File</h4>
+                  <p>{{ selectedZapisVisitsFile ? selectedZapisVisitsFile.name : 'Drag & drop or Click to select' }}</p>
+                  <input #zapisVisitsInput type="file" (change)="onFileChange($event, 'zapisVisitsFile')">
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Zapis.kz Inventory File (Optional .xlsx)</label>
+                <div class="upload-zone" (click)="zapisInventoryInput.click()">
+                  <div class="icon">📦</div>
+                  <h4>Inventory File</h4>
+                  <p>{{ selectedZapisInventoryFile ? selectedZapisInventoryFile.name : 'Drag & drop or Click to select' }}</p>
+                  <input #zapisInventoryInput type="file" (change)="onFileChange($event, 'zapisInventoryFile')">
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+              <button class="deco-btn" [disabled]="!selectedZapisVisitsFile || isJobRunning" (click)="runParser('Zapis.kz')">
+                ⚡ Run Zapis Parser
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Log Progress Box -->
+          <div *ngIf="jobLogText || jobStatus" style="margin-top: 30px;">
+            <div class="deco-card-title" style="font-size: 16px;">
+              <span>Execution Logs</span>
+              <span style="font-size: 11px; color: var(--gold-light);">Job: {{ currentJobId }}</span>
+            </div>
+            
+            <div class="progress-track" *ngIf="isJobRunning">
+              <div class="progress-bar" style="width: 100%; animation: progress-pulse 2s infinite ease-in-out;"></div>
+            </div>
+
+            <div class="log-container" #logContainer>{{ jobLogText }}</div>
+
+            <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center;" *ngIf="jobStatus === 'completed'">
+              <span style="color: #55ff55; font-size: 13px;">✅ Processing Completed!</span>
+              <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none; padding: 8px 20px; font-size: 12px;">
+                📥 Download Results File
+              </a>
+            </div>
+            <div style="margin-top: 15px; color: #ff5555; font-size: 13px;" *ngIf="jobStatus === 'failed'">
+              ❌ Processing Failed. See the logs above for error details.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ================= MODULE B: TOOLS & FUZZY MATCH ================= -->
+      <div *ngIf="activeTab === 'tools'">
+        <div class="deco-card">
+          <div class="deco-card-title">
+            <span>Fuzzy Matcher & Integration Helpers</span>
+          </div>
+
+          <div class="deco-tabs">
+            <button class="deco-tab-btn" [class.active]="activeToolTab === 'fuzzy-matcher'" (click)="activeToolTab = 'fuzzy-matcher'">Fuzzy Matcher</button>
+            <button class="deco-tab-btn" [class.active]="activeToolTab === 'upload-clients'" (click)="activeToolTab = 'upload-clients'">Clients Sync</button>
+            <button class="deco-tab-btn" [class.active]="activeToolTab === 'translations'" (click)="activeToolTab = 'translations'">Translations</button>
+          </div>
+
+          <!-- Fuzzy Matcher Tab -->
+          <div *ngIf="activeToolTab === 'fuzzy-matcher'">
+            <div class="grid-2">
+              <!-- File Match -->
+              <div style="border-right: 1px solid rgba(197,160,89,0.15); padding-right: 30px;">
+                <h3 style="font-family: var(--font-headings); font-size: 15px; color: var(--gold-light); margin-bottom: 15px; text-transform: uppercase;">Spreadsheet Matcher</h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">
+                  Upload an Excel (.xlsx) file containing sheets <strong>'main'</strong> and <strong>'lib'</strong>. The matcher finds closest names and inputs corresponding IDs.
+                </p>
+
+                <div class="upload-zone" (click)="matchFileInput.click()">
+                  <div class="icon">📊</div>
+                  <h4>Matcher Spreadsheet</h4>
+                  <p>{{ selectedMatchFile ? selectedMatchFile.name : 'Select file with main & lib sheets' }}</p>
+                  <input #matchFileInput type="file" (change)="onFileChange($event, 'matchFile')">
+                </div>
+
+                <div class="form-group" style="max-width: 180px;">
+                  <label class="form-label">Min Match Similarity %</label>
+                  <input type="number" class="form-control" [(ngModel)]="matchThreshold" min="0" max="100">
+                </div>
+
+                <button class="deco-btn" [disabled]="!selectedMatchFile || isJobRunning" (click)="runFuzzyMatcherFile()" style="margin-top: 10px;">
+                  ⚡ Process Excel Match
+                </button>
+              </div>
+
+              <!-- Raw Text Match -->
+              <div style="padding-left: 10px;">
+                <h3 style="font-family: var(--font-headings); font-size: 15px; color: var(--gold-light); margin-bottom: 15px; text-transform: uppercase;">Direct Copy-Paste Matcher</h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">
+                  Compare columns instantly. Paste lists of names and library entries below to get immediate table output.
+                </p>
+
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Target Names (One per line)</label>
+                    <textarea class="form-control" style="height: 120px; font-family: monospace; font-size: 11px;" [(ngModel)]="textMain" placeholder=" стрижка мужская&#10; окрашивание волос"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Library Data (ID,Name or Name,ID)</label>
+                    <textarea class="form-control" style="height: 120px; font-family: monospace; font-size: 11px;" [(ngModel)]="textLib" placeholder=" 12345, Стрижка мужская&#10; 67890, Окрашивание волос"></textarea>
+                  </div>
+                </div>
+
+                <div class="form-group" style="max-width: 180px;">
+                  <label class="form-label">Min Match Similarity %</label>
+                  <input type="number" class="form-control" [(ngModel)]="matchThreshold" min="0" max="100">
+                </div>
+
+                <button class="deco-btn" [disabled]="!textMain || !textLib" (click)="runFuzzyMatcherText()" style="margin-top: 10px;">
+                  ⚡ Compare Columns
+                </button>
+              </div>
+            </div>
+
+            <!-- Fuzzy match results text/table -->
+            <div *ngIf="textMatchResults.length > 0" style="margin-top: 30px; border-top: var(--border-deco-thin); padding-top: 20px;">
+              <h3 style="font-family: var(--font-headings); font-size: 16px; color: var(--gold-light); margin-bottom: 15px; text-transform: uppercase;">Matching Results</h3>
+              <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">
+                You can copy individual fields below or copy the entire table directly to paste back to Excel.
+              </p>
+              
+              <div style="overflow-x: auto; max-height: 300px;">
+                <table class="deco-table">
+                  <thead>
+                    <tr>
+                      <th>Target Name</th>
+                      <th>Library Match</th>
+                      <th>Similarity Score</th>
+                      <th>Matched ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let res of textMatchResults">
+                      <td>{{ res.serviceName }}</td>
+                      <td>{{ res.matchedLibName }}</td>
+                      <td [style.color]="res.score >= matchThreshold ? '#55ff55' : '#ffaa55'">{{ res.score }}%</td>
+                      <td style="font-family: monospace; font-weight: bold; color: var(--gold-light);">{{ res.id || '?' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- File logger log block -->
+            <div *ngIf="jobLogText || jobStatus" style="margin-top: 30px;">
+              <!-- Same file results stream -->
+              <div class="deco-card-title" style="font-size: 16px;">
+                <span>File Match logs</span>
+                <span style="font-size: 11px;">Job ID: {{ currentJobId }}</span>
+              </div>
+              <div class="log-container">{{ jobLogText }}</div>
+              <div style="margin-top: 15px;" *ngIf="jobStatus === 'completed'">
+                <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">📥 Download Matched Excel</a>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Clients Sync Tab -->
+          <div *ngIf="activeToolTab === 'upload-clients'">
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
+              Synchronize custom mapped client details directly to Altegio APIs.
+            </p>
+
+            <div class="grid-2">
+              <div>
+                <div class="form-group">
+                  <label class="form-label">Altegio Company ID</label>
+                  <input type="text" class="form-control" [(ngModel)]="companyId" placeholder="12345">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">API Bearer Auth Token</label>
+                  <input type="text" class="form-control" [(ngModel)]="apiToken" placeholder="Authorization bearer token">
+                </div>
+              </div>
+              <div>
+                <div class="form-group">
+                  <label class="form-label">Client Database CSV/TSV (Name, Phone)</label>
+                  <textarea class="form-control" style="height: 125px; font-family: monospace; font-size: 11px;" [(ngModel)]="clientsCsv" placeholder="Алан Караев, 77015551122&#10;Иван Петров, 77074442233"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <button class="deco-btn" [disabled]="!companyId || !apiToken || !clientsCsv || isJobRunning" (click)="syncClientsToAltegio()">
+              ⚡ Push Clients to Altegio
+            </button>
+
+            <!-- Sync logs -->
+            <div *ngIf="jobLogText" style="margin-top: 30px;">
+              <div class="log-container">{{ jobLogText }}</div>
+            </div>
+          </div>
+
+          <!-- Translations Tab -->
+          <div *ngIf="activeToolTab === 'translations'">
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
+              Push and synchronize custom localization translation mappings to the Altegio localization server.
+            </p>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Altegio Company ID</label>
+                <input type="text" class="form-control" [(ngModel)]="companyId" placeholder="12345">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Authorization Token</label>
+                <input type="text" class="form-control" [(ngModel)]="apiToken" placeholder="Bearer Token">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Translations Map JSON</label>
+              <textarea class="form-control" style="height: 140px; font-family: monospace; font-size: 11px;" [(ngModel)]="translationsJson" placeholder='{&#10;  "created_booking_page_title": {&#10;    "ru": "Ваша запись на рассмотрении",&#10;    "en": "Your booking is under review"&#10;  }&#10;}'></textarea>
+            </div>
+            <button class="deco-btn" [disabled]="!companyId || !apiToken || !translationsJson || isJobRunning" (click)="syncTranslationsToAltegio()">
+              ⚡ Sync Localization Map
+            </button>
+            
+            <div *ngIf="jobLogText" style="margin-top: 30px;">
+              <div class="log-container">{{ jobLogText }}</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ================= MODULE C: WIDGET LAB (SIMULATION) ================= -->
+      <div *ngIf="activeTab === 'widget-lab'">
+        <div class="deco-card">
+          <div class="deco-card-title">
+            <span>Widget Customization Lab</span>
+          </div>
+
+          <div class="split-viewer">
+            <!-- Left Side: Scripts list & Code Editor -->
+            <div class="code-section">
+              <label class="form-label">Available Widget Scripts</label>
+              <select class="form-control" style="margin-bottom: 15px; font-family: var(--font-headings); letter-spacing: 1px;" (change)="onWidgetScriptSelect($event)">
+                <option value="">-- Choose Script --</option>
+                <option *ngFor="let s of widgetScripts" [value]="s.name">{{ s.name }}</option>
+              </select>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <label class="form-label" style="margin-bottom: 0;">Code Editor</label>
+                <div style="display: flex; gap: 10px;">
+                  <button class="deco-btn" style="padding: 4px 12px; font-size: 10px;" (click)="copyCodeToClipboard()">Copy</button>
+                  <button class="deco-btn" style="padding: 4px 12px; font-size: 10px;" (click)="runSimulation()">Run Simulation</button>
+                </div>
+              </div>
+              
+              <textarea class="code-textarea" [(ngModel)]="activeCode" placeholder="Select a script or write javascript here..."></textarea>
+            </div>
+
+            <!-- Right Side: Simulation Widget Sandbox -->
+            <div class="simulation-section">
+              <label class="form-label">Altegio Online Booking Mock Sandbox</label>
+              
+              <!-- Container simulating Altegio DOM structures -->
+              <div class="simulation-frame-container">
+                <iframe #simulationIframe class="simulation-iframe"></iframe>
+              </div>
+              
+              <p style="font-size: 11px; color: var(--text-secondary); margin-top: 10px; line-height: 1.4;">
+                Sandbox matches selectors like <code>[data-locator="master_name"]</code>, <code>[data-locator="service_price"]</code>, <code>.order-tag.success</code>, and simulates localization toggles to verify scripts injection behavior without deploying.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ================= MODULE D: TAMPERMONKEY GALLERY ================= -->
+      <div *ngIf="activeTab === 'tampermonkey'">
+        <div class="deco-card">
+          <div class="deco-card-title">
+            <span>Tampermonkey UserScripts Gallery</span>
+          </div>
+          
+          <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 13px;">
+            Browse user scripts designed for manual browser injection. Click 'One-Click Install' to let your browser's Tampermonkey extension catch and configure the scripts instantly.
+          </p>
+
+          <div class="grid-3">
+            <div *ngFor="let s of widgetScripts" class="deco-card" style="margin-bottom: 0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3 style="font-family: var(--font-headings); font-size: 15px; color: var(--gold-light); margin-bottom: 8px;">{{ s.name.replace('.html', '').replace('.js', '') }}</h3>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 15px;">
+                  Size: {{ formatBytes(s.size) }} <br>
+                  Modified: {{ s.lastModified | date:'mediumDate' }}
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="deco-btn" style="padding: 6px 15px; font-size: 11px; flex-grow: 1;" (click)="oneClickInstall(s.name)">
+                  One-Click Install
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ================= MODULE E: KNOWLEDGE BASE (WIKI) ================= -->
+      <div *ngIf="activeTab === 'wiki'">
+        <div class="deco-card">
+          <div class="deco-card-title">
+            <span>Work Wiki & Guidelines</span>
+            <div style="display: flex; gap: 10px;">
+              <button class="deco-btn" *ngIf="!wikiEditMode" style="padding: 6px 15px; font-size: 11px;" (click)="startWikiCreate()">New Article</button>
+              <button class="deco-btn" *ngIf="!wikiEditMode && activeWikiArticle" style="padding: 6px 15px; font-size: 11px;" (click)="startWikiEdit()">Edit</button>
+              <button class="deco-btn" *ngIf="wikiEditMode" style="padding: 6px 15px; font-size: 11px;" (click)="saveWikiArticle()">Save</button>
+              <button class="deco-btn deco-btn-outline" *ngIf="wikiEditMode" style="padding: 6px 15px; font-size: 11px; border-color:#ff5555; color:#ff5555;" (click)="deleteWikiArticle()">Delete</button>
+              <button class="deco-btn deco-btn-outline" *ngIf="wikiEditMode" style="padding: 6px 15px; font-size: 11px;" (click)="cancelWikiEdit()">Cancel</button>
+            </div>
+          </div>
+
+          <div class="wiki-split">
+            <!-- Left Side: Articles List -->
+            <div class="wiki-sidebar">
+              <label class="form-label">Articles</label>
+              <ul class="wiki-list">
+                <li class="wiki-list-item" *ngFor="let art of wikiArticles" [class.active]="art === activeWikiArticle" (click)="loadWikiArticle(art)">
+                  <span>{{ art }}</span>
+                  <span>📄</span>
+                </li>
+                <li *ngIf="wikiArticles.length === 0" style="font-size: 12px; color: var(--text-secondary); padding: 10px;">
+                  No articles found.
+                </li>
+              </ul>
+            </div>
+
+            <!-- Right Side: Markdown View / Edit -->
+            <div class="wiki-content">
+              <!-- View Mode -->
+              <div *ngIf="!wikiEditMode" class="wiki-body">
+                <div [innerHTML]="parsedWikiHtml"></div>
+              </div>
+
+              <!-- Edit/Create Mode -->
+              <div *ngIf="wikiEditMode" style="height: 100%; display: flex; flex-direction: column;">
+                <div class="form-group">
+                  <label class="form-label">Article File Name (without .md)</label>
+                  <input type="text" class="form-control" [(ngModel)]="wikiFileName" [disabled]="!wikiIsNew" placeholder="MyArticle">
+                </div>
+                <div class="form-group" style="flex-grow: 1; display: flex; flex-direction: column;">
+                  <label class="form-label">Markdown Content</label>
+                  <textarea class="form-control" style="flex-grow: 1; resize: none; font-family: monospace; font-size: 13px; line-height: 1.5; height: 300px;" [(ngModel)]="wikiContentText"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>

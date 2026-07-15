@@ -1,0 +1,210 @@
+{
+  "main": {
+    "id": "549620280c5dfdb0",
+    "type": "split",
+    "children": [
+      {
+        "id": "c00216692e8fb709",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "29f0fe34e788e664",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Project Codex - Art-Deco Automation Hub.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Project Codex - Art-Deco Automation Hub"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "62b968be81b3266f",
+    "type": "split",
+    "children": [
+      {
+        "id": "1724e6dd1902bea2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "163d635e3771441a",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Файловый менеджер"
+            }
+          },
+          {
+            "id": "bd73285db645e8c9",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Поиск"
+            }
+          },
+          {
+            "id": "6f9185848b87ea10",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Закладки"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "2dc15974fc965b61",
+    "type": "split",
+    "children": [
+      {
+        "id": "86ad8e81fc52e661",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "025245e158e4c97b",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Project Codex - Art-Deco Automation Hub.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Обратные ссылки для Project Codex - Art-Deco Automation Hub"
+            }
+          },
+          {
+            "id": "66cd8f60d671e3a6",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Project Codex - Art-Deco Automation Hub.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Исходящие ссылки из Project Codex - Art-Deco Automation Hub"
+            }
+          },
+          {
+            "id": "a0569fd3b1513177",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Теги"
+            }
+          },
+          {
+            "id": "ccaef3893e6609d8",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Все свойства"
+            }
+          },
+          {
+            "id": "90ffe8a5448a5b0e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Project Codex - Art-Deco Automation Hub.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Структура Project Codex - Art-Deco Automation Hub"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Меню быстрого перехода": false,
+      "graph:Граф": false,
+      "canvas:Создать новый холст": false,
+      "daily-notes:Сегодняшняя заметка": false,
+      "templates:Вставить шаблон": false,
+      "command-palette:Открыть палитру команд": false,
+      "bases:Создать новую базу": false
+    }
+  },
+  "active": "29f0fe34e788e664",
+  "lastOpenFiles": [
+    "frontend/public",
+    "frontend/src/app/app.ts",
+    "frontend/src/app/app.html",
+    "frontend/src/styles.css",
+    "frontend/src/app/app.config.ts",
+    "frontend/src/app",
+    "frontend/src/main.ts",
+    "frontend/src/index.html",
+    "frontend/src",
+    "frontend/Dockerfile",
+    "frontend/nginx.conf",
+    "temp_inspection/AltegioWidgetScripts/README.md",
+    "temp_inspection/dikidiVisitsExport/README.md",
+    "temp_inspection/AltegioBookingsParser/README.md",
+    "Widget Scripts.md",
+    "Project Codex - Art-Deco Automation Hub.md",
+    "Dikidi.md",
+    "FuzzyMatch.md",
+    "Booksy.md",
+    "README.md",
+    "Dikidi File Prep script.md"
+  ]
+}

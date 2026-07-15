@@ -1,0 +1,157 @@
+<script>
+  (function() {
+    // Helper to generate month name translations for the current month in common Altegio locales
+    function getCurrentMonthNames(date) {
+      const locales = ['ru', 'en', 'az', 'ka'];
+      const names = new Set();
+      
+      // Add standard long and short month names
+      locales.forEach(locale => {
+        try {
+          const longName = new Intl.DateTimeFormat(locale, { month: 'long' }).format(date).toLowerCase();
+          const shortName = new Intl.DateTimeFormat(locale, { month: 'short' }).format(date).toLowerCase();
+          names.add(longName);
+          names.add(shortName);
+          names.add(longName.replace(/\.$/, ''));
+          names.add(shortName.replace(/\.$/, ''));
+        } catch (e) {
+          // Fallback if locale is not supported
+        }
+      });
+      
+      // Fallback manual month names for May (since current date is May)
+      names.add('may');
+      names.add('мая');
+      names.add('май');
+      names.add('mayıs');
+      names.add('მაისი');
+      names.add('მაი');
+      
+      return Array.from(names);
+    }
+
+    // Helper to check if today's date is selected in the widget
+    function isTodaySelected() {
+      const today = new Date();
+      const todayDateNum = today.getDate();
+      
+      // 1. Search for active day element in the calendar/date list
+      const activeElements = document.querySelectorAll(
+        '.active, .selected, .is-active, .is-selected, [class*="active"], [class*="selected"], [class*="-day--active"]'
+      );
+      
+      for (const el of activeElements) {
+        const text = el.textContent.trim();
+        if (!text || text.length > 50) continue;
+        // Skip elements representing prices or other UI items
+        if (text.includes('₸') || text.includes('$') || text.includes('₽') || text.includes('€') || text.includes('руб')) continue;
+        
+        const numbers = text.match(/\d+/g);
+        if (numbers) {
+          const nums = numbers.map(Number);
+          // If the active day element contains today's day number
+          if (nums.includes(todayDateNum) && !text.match(/\d{5,}/)) {
+            return true;
+          }
+          // If it contains a different day number, then today is not selected
+          if (nums.some(n => n >= 1 && n <= 31 && n !== todayDateNum)) {
+            return false;
+          }
+        }
+      }
+
+      // 2. Fallback check: Look at the selected date header text
+      const headers = document.querySelectorAll('h1, h2, h3, h4, .header, .title, [class*="header"], [class*="title"], [class*="selected-date"]');
+      const currentMonthTerms = getCurrentMonthNames(today);
+      
+      for (const h of headers) {
+        const text = h.textContent.trim().toLowerCase();
+        if (text.length > 0 && text.length < 100) {
+          const numbers = text.match(/\d+/g);
+          if (numbers) {
+            const nums = numbers.map(Number);
+            if (nums.includes(todayDateNum)) {
+              const mentionsMonth = currentMonthTerms.some(term => text.includes(term));
+              const mentionsToday = text.includes('today') || text.includes('сегодня') || text.includes('bugün');
+              if (mentionsMonth || mentionsToday) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Fallback check: Check if the first day element in the date list is active
+      const dateContainers = document.querySelectorAll('.date-select, .dates-list, [class*="date-select"], [class*="dates-list"], [class*="calendar-days"]');
+      for (const container of dateContainers) {
+        const dayItems = container.children;
+        if (dayItems.length > 0) {
+          const firstItem = dayItems[0];
+          const isFirstActive = firstItem.classList.contains('active') || 
+                              firstItem.classList.contains('selected') || 
+                              firstItem.outerHTML.includes('active') || 
+                              firstItem.outerHTML.includes('selected');
+          if (isFirstActive) {
+            return true;
+          }
+        }
+      }
+
+      // 4. Default: If no evidence points to another day being selected, default to true
+      return true;
+    }
+
+    // Main filtering function
+    function filterTimeIntervals() {
+      const today = new Date();
+      const todaySelected = isTodaySelected();
+      
+      if (!todaySelected) {
+        // If today is not selected, restore any slots hidden by this script
+        const hiddenSlots = document.querySelectorAll('[data-hidden-by-custom-script="true"]');
+        hiddenSlots.forEach(el => {
+          el.style.display = '';
+          el.removeAttribute('data-hidden-by-custom-script');
+        });
+        return;
+      }
+
+      const currentHours = today.getHours();
+      const currentMinutes = today.getMinutes();
+      const currentTotalMinutes = currentHours * 60 + currentMinutes;
+
+      // Find all time intervals
+      const timeIntervals = document.querySelectorAll('.time-interval');
+      
+      timeIntervals.forEach(el => {
+        const text = el.textContent.trim();
+        const match = text.match(/(\d{1,2})[:.](\d{2})/);
+        
+        if (match) {
+          const hours = parseInt(match[1], 10);
+          const minutes = parseInt(match[2], 10);
+          const slotTotalMinutes = hours * 60 + minutes;
+
+          const diff = slotTotalMinutes - currentTotalMinutes;
+          
+          // If the slot is within 5 minutes of current time or in the past (diff <= 5)
+          if (diff <= 5) {
+            if (el.style.display !== 'none') {
+              el.style.display = 'none';
+              el.setAttribute('data-hidden-by-custom-script', 'true');
+            }
+          } else {
+            // If the time is outside the 5-minute window and was previously hidden, restore it
+            if (el.getAttribute('data-hidden-by-custom-script') === 'true') {
+              el.style.display = '';
+              el.removeAttribute('data-hidden-by-custom-script');
+            }
+          }
+        }
+      });
+    }
+
+    // Run the filter check every 300 milliseconds
+    setInterval(filterTimeIntervals, 300);
+  })();
+</script>

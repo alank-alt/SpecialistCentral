@@ -1,0 +1,39 @@
+<script>
+  // Configuration object for languages
+  const TRANSLATIONS_CONFIG = {
+    ru: "Ваша запись находится на рассмотрении, пожалуйста, ожидайте обратной связи от администратора.",
+    en: "Your booking is under review, please wait for feedback from the administrator.",
+    ka: "თქვენი ჯავშანი განხილვის პროცესშია, გთхოვთ დაელოდოთ უკუკავშირს ადმინისტრატორისგან."
+  };
+  
+  // Get the current language from the HTML tag or the browser
+  const currentLang = document.documentElement.lang || navigator.language;
+
+  // Use setInterval to check for the element every 200ms
+  const checkExist = setInterval(() => {
+    
+    // Look for the "order-actions" div
+    const orderActionsElement = document.querySelector('.order-actions');
+
+    // If the order-actions element has rendered on the page
+    if (orderActionsElement) {
+      
+      // Grab the title element that needs its text replaced
+      const titleElement = document.querySelector('[data-locator="created_booking_page_title"]');
+
+      if (titleElement) {
+        // Change the text based on the detected language
+        if (currentLang.includes("ru")) {
+          titleElement.textContent = TRANSLATIONS_CONFIG.ru;
+        } else if (currentLang.includes("en")) {
+          titleElement.textContent = TRANSLATIONS_CONFIG.en;
+        } else if (currentLang.includes("ka")) {
+          titleElement.textContent = TRANSLATIONS_CONFIG.ka;
+        }
+      }
+
+      // Stop checking once the condition is met and executed
+      clearInterval(checkExist);
+    }
+  }, 200);
+</script>

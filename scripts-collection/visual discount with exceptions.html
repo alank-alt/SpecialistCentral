@@ -1,0 +1,34 @@
+<script>
+  (function() {
+    // --- CONFIGURATION ---
+    const CONFIG = {
+      discountFactor: 0.8, // 20% discount
+      currencySymbol: "&nbsp;₸", // Kazakh Tenge
+      // Excluded service item data-locator selectors
+      excludedSelectors: [
+        '[data-locator="service_item_EXCLUDED_ID_1"]',
+        '[data-locator="service_item_EXCLUDED_ID_2"]'
+      ],
+      checkIntervalMs: 200
+    };
+
+    setInterval(() => {
+      const priceElements = document.querySelectorAll('[data-locator="service_price"]:not([data-discount-applied="true"])');
+      priceElements.forEach(element => {
+        // Check if this price element is inside any of the excluded service cards
+        const isExcluded = CONFIG.excludedSelectors.some(selector => element.closest(selector));
+        
+        if (!isExcluded) {
+          const originalText = element.textContent;
+          const numericValue = parseInt(originalText.replace(/[^\d]/g, ''), 10);
+          if (!isNaN(numericValue)) {
+            const discountedPrice = Math.round(numericValue * CONFIG.discountFactor);
+            const formattedPrice = discountedPrice.toLocaleString('en-US');
+            element.innerHTML = ` ${formattedPrice}${CONFIG.currencySymbol} `;
+          }
+        }
+        element.setAttribute('data-discount-applied', 'true');
+      });
+    }, CONFIG.checkIntervalMs);
+  })();
+</script>

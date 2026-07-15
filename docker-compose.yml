@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: specialist_backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./wiki:/app/wiki
+      - ./uploads:/app/uploads
+      - ./scripts-collection:/app/scripts-collection
+      - ./db:/app/db
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_PATH=/app/db/database.sqlite
+      - WIKI_DIR=/app/wiki
+      - SCRIPTS_DIR=/app/scripts-collection
+      - UPLOADS_DIR=/app/uploads
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: specialist_frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -1,0 +1,45 @@
+<script>
+(function() {
+    const CONFIG = {
+        langMapping: {
+            "___": 0,
+            "___": 1,
+            "___": 2,
+            "default": 0
+        },
+        selectors: {
+            masterName: '[data-locator="master_name"]',
+        },
+        stateAttributes: {
+            originalName: 'data-original-name',
+            processedLang: 'data-processed-lang'
+        },
+        delimiter: "/",
+        checkIntervalMs: 500
+    };
+    function processMasterNames() {
+        const currentLang = document.documentElement.lang || "default";
+        let targetIndex = CONFIG.langMapping[currentLang];
+        if (targetIndex === undefined) {
+            targetIndex = CONFIG.langMapping["default"];
+        }
+        const nameElements = document.querySelectorAll(CONFIG.selectors.masterName);
+        nameElements.forEach(el => {
+            if (!el.hasAttribute(CONFIG.stateAttributes.originalName)) {
+                el.setAttribute(CONFIG.stateAttributes.originalName, el.textContent.trim());
+            }
+            if (el.getAttribute(CONFIG.stateAttributes.processedLang) !== currentLang) {
+                const originalText = el.getAttribute(CONFIG.stateAttributes.originalName);
+                if (originalText.includes(CONFIG.delimiter)) {
+                    const parts = originalText.split(CONFIG.delimiter).map(part => part.trim());
+                    el.textContent = parts[targetIndex] || parts[0];
+                } else {
+                    el.textContent = originalText;
+                }
+                el.setAttribute(CONFIG.stateAttributes.processedLang, currentLang);
+            }
+        });
+    }
+    setInterval(processMasterNames, CONFIG.checkIntervalMs);
+})();
+</script>
