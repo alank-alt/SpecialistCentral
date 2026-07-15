@@ -62,6 +62,18 @@ export class App implements OnInit, AfterViewInit {
   translationsTextPaste: string = '';
   translationMatchMode: string = 'byName';
   translationMode: string = 'services';
+
+  // Booksy Service Extractor
+  selectedBooksyExtractorFile: File | null = null;
+  booksyExtractorActive: boolean = false;
+  booksySubTab: string = 'parser';
+
+  // Booksy Clients Parser
+  booksyClientsFile: File | null = null;
+  booksyClientsHeaders: string[] = [];
+  booksyClientsConfig: { name: string, action: string, rename: string }[] = [];
+  booksyClientsLoading: boolean = false;
+  booksyClientsActive: boolean = false;
   
   // Text match inputs
   textMain: string = '';
@@ -234,6 +246,8 @@ export class App implements OnInit, AfterViewInit {
     if (field === 'matchFile') this.selectedMatchFile = file;
     if (field === 'transFile') this.selectedTransFile = file;
     if (field === 'clientsFile') this.selectedClientsFile = file;
+    if (field === 'booksyExtractorFile') this.selectedBooksyExtractorFile = file;
+    if (field === 'booksyClientsFile') { this.booksyClientsFile = file; this.booksyClientsHeaders = []; this.booksyClientsConfig = []; }
   }
 
   // --- JOB STREAM LOGGER ---
@@ -315,6 +329,66 @@ export class App implements OnInit, AfterViewInit {
         this.startLogsStream(res.jobId);
       },
       error: (err) => alert('Failed to start parsing job: ' + (err.error?.error || err.message))
+    });
+  }
+
+  // --- BOOKSY SERVICE EXTRACTOR ---
+  runBooksyExtractor() {
+    if (!this.selectedBooksyExtractorFile) return;
+    const formData = new FormData();
+    formData.append('visitsFile', this.selectedBooksyExtractorFile);
+
+    this.booksyExtractorActive = true;
+    this.jobStatus = '';
+    this.jobLogText = '';
+
+    this.http.post<{ jobId: string }>('/api/tools/booksy-extract-services', formData).subscribe({
+      next: (res) => this.startLogsStream(res.jobId),
+      error: (err) => alert('Failed to start extraction: ' + (err.error?.error || err.message))
+    });
+  }
+
+  // --- BOOKSY CLIENTS PARSER ---
+  loadBooksyClientsHeaders() {
+    if (!this.booksyClientsFile) return;
+    this.booksyClientsLoading = true;
+    this.booksyClientsHeaders = [];
+    this.booksyClientsConfig = [];
+
+    const formData = new FormData();
+    formData.append('clientsFile', this.booksyClientsFile);
+
+    this.http.post<{ headers: string[] }>('/api/tools/booksy-clients/read-headers', formData).subscribe({
+      next: (res) => {
+        this.booksyClientsHeaders = res.headers;
+        this.booksyClientsConfig = res.headers.map(h => ({ name: h, action: 'keep', rename: '' }));
+        this.booksyClientsLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.booksyClientsLoading = false;
+        alert('Failed to read headers: ' + (err.error?.error || err.message));
+      }
+    });
+  }
+
+  setBooksyClientsAction(action: string) {
+    this.booksyClientsConfig = this.booksyClientsConfig.map(c => ({ ...c, action }));
+  }
+
+  processBooksyClients() {
+    if (!this.booksyClientsFile || !this.booksyClientsConfig.length) return;
+    const formData = new FormData();
+    formData.append('clientsFile', this.booksyClientsFile);
+    formData.append('columnConfig', JSON.stringify(this.booksyClientsConfig));
+
+    this.booksyClientsActive = true;
+    this.jobStatus = '';
+    this.jobLogText = '';
+
+    this.http.post<{ jobId: string }>('/api/tools/booksy-clients/process', formData).subscribe({
+      next: (res) => this.startLogsStream(res.jobId),
+      error: (err) => alert('Failed to process: ' + (err.error?.error || err.message))
     });
   }
 

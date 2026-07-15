@@ -1058,6 +1058,371 @@ app.post('/api/settings', (req, res) => {
   }
 });
 
+// --- BOOKSY SERVICE EXTRACTOR ---
+app.post('/api/tools/booksy-extract-services', upload.single('visitsFile'), async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ error: 'Missing visitsFile' });
+  }
+
+  const jobId = `job_${Date.now()}`;
+  db.prepare('INSERT INTO jobs (id, type, status, logs) VALUES (?, ?, ?, ?)')
+    .run(jobId, 'Booksy Service Extractor', 'pending', `[${new Date().toISOString()}] Job created.`);
+
+  res.json({ jobId });
+
+  setTimeout(async () => {
+    updateJobStatus(jobId, 'processing');
+    logToJob(jobId, 'Reading Booksy visits file...');
+
+    try {
+      const { default: ExcelJS } = await import('exceljs');
+
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.readFile(file.path);
+      const ws = wb.worksheets[0];
+
+      if (!ws) throw new Error('No worksheet found in file.');
+
+      // Map headers
+      const headerRow = ws.getRow(1);
+      const colMap = {};
+      headerRow.eachCell((cell, colNum) => {
+        const name = String(cell.value || '').trim().toLowerCase();
+        colMap[name] = colNum;
+      });
+
+      logToJob(jobId, `Detected columns: ${Object.keys(colMap).join(', ')}`);
+
+      const COL_SERVICE = colMap['service_name'];
+      const COL_PRICE = colMap['price'];
+      const COL_FINAL = colMap['final_price'];
+      const COL_FROM = colMap['booked_from'];
+      const COL_TILL = colMap['booked_till'];
+      const COL_STAFF = colMap['staffer'];
+
+      if (!COL_SERVICE) throw new Error('Could not find "service_name" column in file.');
+
+      // Aggregate per service
+      const serviceMap = new Map();
+
+      ws.eachRow((row, rowIndex) => {
+        if (rowIndex === 1) return; // skip header
+
+        const serviceName = String(row.getCell(COL_SERVICE).value || '').trim();
+        if (!serviceName) return;
+
+        const price = parseFloat(row.getCell(COL_PRICE)?.value) || null;
+        const finalPrice = parseFloat(row.getCell(COL_FINAL)?.value) || null;
+        const staff = COL_STAFF ? String(row.getCell(COL_STAFF).value || '').trim() : null;
+
+        // Calculate duration in minutes
+        let durationMin = null;
+        if (COL_FROM && COL_TILL) {
+          const fromVal = row.getCell(COL_FROM).value;
+          const tillVal = row.getCell(COL_TILL).value;
+          if (fromVal && tillVal) {
+            const fromDate = fromVal instanceof Date ? fromVal : new Date(fromVal);
+            const tillDate = tillVal instanceof Date ? tillVal : new Date(tillVal);
+            const diffMs = tillDate - fromDate;
+            if (!isNaN(diffMs) && diffMs > 0) {
+              durationMin = Math.round(diffMs / 60000);
+            }
+          }
+        }
+
+        if (!serviceMap.has(serviceName)) {
+          serviceMap.set(serviceName, {
+            count: 0,
+            prices: [],
+            finalPrices: [],
+            durations: [],
+            staffSet: new Set()
+          });
+        }
+
+        const entry = serviceMap.get(serviceName);
+        entry.count++;
+        if (price !== null && !isNaN(price)) entry.prices.push(price);
+        if (finalPrice !== null && !isNaN(finalPrice)) entry.finalPrices.push(finalPrice);
+        if (durationMin !== null) entry.durations.push(durationMin);
+        if (staff) entry.staffSet.add(staff);
+      });
+
+      logToJob(jobId, `Found ${serviceMap.size} unique services across ${ws.rowCount - 1} visit rows.`);
+
+      // Build output workbook
+      const outWb = new ExcelJS.Workbook();
+      const outWs = outWb.addWorksheet('Extracted Services');
+
+      // Style header row
+      outWs.columns = [
+        { header: 'Service Name', key: 'service', width: 45 },
+        { header: 'Booking Count', key: 'count', width: 16 },
+        { header: 'Price Min', key: 'priceMin', width: 14 },
+        { header: 'Price Max', key: 'priceMax', width: 14 },
+        { header: 'Avg Final Price', key: 'avgFinal', width: 16 },
+        { header: 'Duration Min (min)', key: 'durMin', width: 20 },
+        { header: 'Duration Max (min)', key: 'durMax', width: 20 },
+        { header: 'Duration Avg (min)', key: 'durAvg', width: 20 },
+        { header: 'Staff Members', key: 'staff', width: 55 }
+      ];
+
+      // Style header
+      const headerRowOut = outWs.getRow(1);
+      headerRowOut.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRowOut.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } };
+      headerRowOut.alignment = { vertical: 'middle', horizontal: 'center' };
+      headerRowOut.height = 20;
+
+      const avg = (arr) => arr.length ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 100) / 100 : null;
+      const min = (arr) => arr.length ? Math.min(...arr) : null;
+      const max = (arr) => arr.length ? Math.max(...arr) : null;
+
+      // Sort by booking count desc
+      const sorted = [...serviceMap.entries()].sort((a, b) => b[1].count - a[1].count);
+
+      for (const [name, data] of sorted) {
+        outWs.addRow({
+          service: name,
+          count: data.count,
+          priceMin: min(data.prices),
+          priceMax: max(data.prices),
+          avgFinal: avg(data.finalPrices),
+          durMin: min(data.durations),
+          durMax: max(data.durations),
+          durAvg: avg(data.durations),
+          staff: [...data.staffSet].sort().join(', ')
+        });
+      }
+
+      // Alternate row colors
+      outWs.eachRow((row, idx) => {
+        if (idx > 1) {
+          const fill = idx % 2 === 0
+            ? { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } }
+            : { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+          row.fill = fill;
+        }
+      });
+
+      // Save output
+      const outFilename = `Extracted_Services_${Date.now()}.xlsx`;
+      const outPath = path.join(uploadsDir, outFilename);
+      await outWb.xlsx.writeFile(outPath);
+
+      logToJob(jobId, `✅ Extraction complete. ${serviceMap.size} services written.`);
+      updateJobStatus(jobId, 'completed', outFilename);
+
+      // Clean up uploaded input
+      fs.unlink(file.path, () => {});
+
+    } catch (err) {
+      logToJob(jobId, `ERROR: ${err.message}`);
+      updateJobStatus(jobId, 'failed');
+    }
+  }, 100);
+});
+
+// --- BOOKSY CLIENTS PARSER: Read Headers ---
+app.post('/api/tools/booksy-clients/read-headers', upload.single('clientsFile'), async (req, res) => {
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'Missing clientsFile' });
+
+  try {
+    const { default: ExcelJS } = await import('exceljs');
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.readFile(file.path);
+    const ws = wb.worksheets[0];
+    if (!ws) throw new Error('No worksheet found.');
+
+    const headers = [];
+    ws.getRow(1).eachCell((cell) => {
+      const val = String(cell.value || '').trim();
+      if (val) headers.push(val);
+    });
+
+    fs.unlink(file.path, () => {});
+    res.json({ headers });
+  } catch (err) {
+    fs.unlink(file.path, () => {});
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- BOOKSY CLIENTS PARSER: Process File ---
+app.post('/api/tools/booksy-clients/process', upload.single('clientsFile'), async (req, res) => {
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'Missing clientsFile' });
+
+  let columnConfig;
+  try {
+    columnConfig = JSON.parse(req.body.columnConfig || '[]');
+  } catch {
+    return res.status(400).json({ error: 'Invalid columnConfig JSON' });
+  }
+
+  const jobId = `job_${Date.now()}`;
+  db.prepare('INSERT INTO jobs (id, type, status, logs) VALUES (?, ?, ?, ?)')
+    .run(jobId, 'Booksy Clients Parser', 'pending', `[${new Date().toISOString()}] Job created.`);
+
+  res.json({ jobId });
+
+  setTimeout(async () => {
+    updateJobStatus(jobId, 'processing');
+    logToJob(jobId, 'Reading clients file...');
+
+    try {
+      const { default: ExcelJS } = await import('exceljs');
+
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.readFile(file.path);
+      const ws = wb.worksheets[0];
+      if (!ws) throw new Error('No worksheet found.');
+
+      // Map header names → column indices
+      const headerRow = ws.getRow(1);
+      const colIndexMap = {};
+      headerRow.eachCell((cell, colNum) => {
+        const name = String(cell.value || '').trim();
+        if (name) colIndexMap[name] = colNum;
+      });
+
+      // Determine output columns from config
+      const keepCols   = columnConfig.filter(c => c.action === 'keep');
+      const commentCols = columnConfig.filter(c => c.action === 'comment').map(c => c.name);
+      const deleteCols  = columnConfig.filter(c => c.action === 'delete').length;
+
+      logToJob(jobId, `Keep: ${keepCols.length} cols | Comment+: ${commentCols.length} cols | Delete: ${deleteCols} cols`);
+
+      // Auto-detect phone & first_name columns (case-insensitive, among ALL source headers)
+      const allHeaders = Object.keys(colIndexMap);
+      const phoneColName = allHeaders.find(h => /phone|mobile|tel/i.test(h)) || null;
+      const nameColName  = allHeaders.find(h => /first.?name|firstname/i.test(h)) || null;
+      if (phoneColName) logToJob(jobId, `Phone column detected: "${phoneColName}"`);
+      if (nameColName)  logToJob(jobId, `First name column detected: "${nameColName}"`);
+
+      // --- PASS 1: Read all data rows, trim, detect phone/name ---
+      const allRows = [];
+      ws.eachRow((row, rowIndex) => {
+        if (rowIndex === 1) return;
+        const rowData = {};
+        for (const [name, colIdx] of Object.entries(colIndexMap)) {
+          const rawVal = row.getCell(colIdx).value;
+          rowData[name] = rawVal != null ? String(rawVal).trim() : '';
+        }
+        allRows.push(rowData);
+      });
+      logToJob(jobId, `Total input rows: ${allRows.length}`);
+
+      // --- RULE 3: Populate first_name with 'no-name' if empty ---
+      if (nameColName) {
+        let filledCount = 0;
+        for (const row of allRows) {
+          if (!row[nameColName]) { row[nameColName] = 'no-name'; filledCount++; }
+        }
+        if (filledCount) logToJob(jobId, `Filled ${filledCount} empty first_name cells with "no-name"`);
+      }
+
+      // --- RULE 4: Split rows with missing phone into Discard ---
+      let discardRows = [];
+      let validRows = allRows;
+      if (phoneColName) {
+        discardRows = allRows.filter(r => !r[phoneColName]);
+        validRows   = allRows.filter(r =>  r[phoneColName]);
+        logToJob(jobId, `${discardRows.length} rows missing phone → Discard sheet`);
+      }
+
+      // --- RULE 1: Deduplicate by phone (keep first occurrence) ---
+      if (phoneColName) {
+        const seen = new Set();
+        const before = validRows.length;
+        validRows = validRows.filter(r => {
+          const phone = r[phoneColName];
+          if (seen.has(phone)) return false;
+          seen.add(phone);
+          return true;
+        });
+        const dupes = before - validRows.length;
+        if (dupes) logToJob(jobId, `Removed ${dupes} duplicate phone rows`);
+      }
+
+      logToJob(jobId, `Rows to export: ${validRows.length} | Discard: ${discardRows.length}`);
+
+      // Helper to style a header row
+      const styleHeader = (headerRowRef) => {
+        headerRowRef.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRowRef.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A2E' } };
+        headerRowRef.alignment = { vertical: 'middle', horizontal: 'center' };
+        headerRowRef.height = 20;
+      };
+
+      const styleDataRows = (sheet) => {
+        sheet.eachRow((row, idx) => {
+          if (idx > 1) {
+            row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: idx % 2 === 0 ? 'FFF5F5F5' : 'FFFFFFFF' } };
+          }
+        });
+      };
+
+      // Build output workbook
+      const outWb = new ExcelJS.Workbook();
+      const outWs = outWb.addWorksheet('Clients');
+
+      // Output column definitions: use rename if provided, else original name
+      const outColumns = keepCols.map(col => {
+        const outName = col.rename && col.rename.trim() ? col.rename.trim() : col.name;
+        return { header: outName, key: col.name, width: Math.max(outName.length + 4, 20) };
+      });
+      if (commentCols.length > 0) {
+        outColumns.push({ header: 'Comment+', key: '__comment__', width: 80 });
+      }
+      outWs.columns = outColumns;
+      styleHeader(outWs.getRow(1));
+
+      // Write valid rows
+      for (const rowData of validRows) {
+        const outRow = {};
+        for (const col of keepCols) {
+          outRow[col.name] = rowData[col.name] ?? '';
+        }
+        if (commentCols.length > 0) {
+          const parts = commentCols
+            .map(n => rowData[n] ? `${n}: ${rowData[n]}` : null)
+            .filter(Boolean);
+          outRow['__comment__'] = parts.join(' | ');
+        }
+        outWs.addRow(outRow);
+      }
+      styleDataRows(outWs);
+
+      // --- Write Discard sheet (all original columns) ---
+      if (discardRows.length > 0) {
+        const discardWs = outWb.addWorksheet('Discard');
+        discardWs.columns = allHeaders.map(h => ({ header: h, key: h, width: Math.max(h.length + 4, 18) }));
+        styleHeader(discardWs.getRow(1));
+        for (const rowData of discardRows) {
+          discardWs.addRow(rowData);
+        }
+        styleDataRows(discardWs);
+      }
+
+      const outFilename = `Processed_Clients_${Date.now()}.xlsx`;
+      const outPath = path.join(uploadsDir, outFilename);
+      await outWb.xlsx.writeFile(outPath);
+
+      logToJob(jobId, `✅ Done. ${validRows.length} clients exported | ${discardRows.length} discarded.`);
+      updateJobStatus(jobId, 'completed', outFilename);
+      fs.unlink(file.path, () => {});
+
+    } catch (err) {
+      logToJob(jobId, `ERROR: ${err.message}`);
+      updateJobStatus(jobId, 'failed');
+      fs.unlink(file.path, () => {});
+    }
+  }, 100);
+});
+
 // Start Server
 app.listen(port, () => {
   console.log(`[Server] Running on port ${port}`);

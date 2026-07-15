@@ -75,58 +75,262 @@
 
             <!-- Booksy Parser Tab -->
             <div *ngIf="activeParserTab === 'booksy'">
-              <div class="form-group" style="max-width: 300px; margin-bottom: 25px;">
-                <label class="form-label">Altegio Company ID</label>
-                <input type="text" class="form-control" [(ngModel)]="booksyCompanyId" placeholder="1299847">
+
+              <!-- Inner Booksy sub-tabs -->
+              <div class="deco-tabs" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <button class="deco-tab-btn" [class.active]="booksySubTab === 'parser'" (click)="booksySubTab = 'parser'">⚡ Parser</button>
+                <button class="deco-tab-btn" [class.active]="booksySubTab === 'extractor'" (click)="booksySubTab = 'extractor'">🔍 Service Extractor</button>
+                <button class="deco-tab-btn" [class.active]="booksySubTab === 'clients-parser'" (click)="booksySubTab = 'clients-parser'">👤 Clients Parser</button>
               </div>
 
-              <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
-                Fuzzy matches Booksy exports (Bookings, Staff list, and Services sheet) to map master & service IDs for Altegio uploads.
-              </p>
-              
-              <div class="grid-3">
-                <div>
-                  <label class="form-label">Bookings Excel (.xlsx)</label>
-                  <div class="upload-zone" (click)="bookingsInput.click()">
-                    <div class="icon">📥</div>
-                    <h4>Visits File</h4>
-                    <p>{{ selectedBookingsFile ? selectedBookingsFile.name : 'Click to select' }}</p>
-                    <input #bookingsInput type="file" (change)="onFileChange($event, 'bookingsFile')">
+              <!-- Parser sub-tab -->
+              <div *ngIf="booksySubTab === 'parser'">
+                <div class="form-group" style="max-width: 300px; margin-bottom: 25px;">
+                  <label class="form-label">Altegio Company ID</label>
+                  <input type="text" class="form-control" [(ngModel)]="booksyCompanyId" placeholder="1299847">
+                </div>
+
+                <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
+                  Fuzzy matches Booksy exports (Bookings, Staff list, and Services sheet) to map master &amp; service IDs for Altegio uploads.
+                </p>
+
+                <div class="grid-3">
+                  <div>
+                    <label class="form-label">Bookings Excel (.xlsx)</label>
+                    <div class="upload-zone" (click)="bookingsInput.click()">
+                      <div class="icon">📥</div>
+                      <h4>Visits File</h4>
+                      <p>{{ selectedBookingsFile ? selectedBookingsFile.name : 'Click to select' }}</p>
+                      <input #bookingsInput type="file" (change)="onFileChange($event, 'bookingsFile')">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="form-label">Staff Excel (.xlsx)</label>
+                    <div class="upload-zone" (click)="staffInput.click()">
+                      <div class="icon">👥</div>
+                      <h4>Staff &amp; IDs</h4>
+                      <p>{{ selectedStaffFile ? selectedStaffFile.name : 'Click to select' }}</p>
+                      <input #staffInput type="file" (change)="onFileChange($event, 'staffFile')">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="form-label">Services Excel (.xls/.xlsx)</label>
+                    <div class="upload-zone" (click)="servicesInput.click()">
+                      <div class="icon">💅</div>
+                      <h4>Services Export</h4>
+                      <p>{{ selectedServicesFile ? selectedServicesFile.name : 'Click to select' }}</p>
+                      <input #servicesInput type="file" (change)="onFileChange($event, 'servicesFile')">
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label class="form-label">Staff Excel (.xlsx)</label>
-                  <div class="upload-zone" (click)="staffInput.click()">
-                    <div class="icon">👥</div>
-                    <h4>Staff & IDs</h4>
-                    <p>{{ selectedStaffFile ? selectedStaffFile.name : 'Click to select' }}</p>
-                    <input #staffInput type="file" (change)="onFileChange($event, 'staffFile')">
-                  </div>
+                <div class="form-group" style="max-width: 250px; margin-top: 10px;">
+                  <label class="form-label">Min Match Similarity %</label>
+                  <input type="number" class="form-control" [(ngModel)]="booksyThreshold" min="0" max="100" step="0.5">
                 </div>
 
-                <div>
-                  <label class="form-label">Services Excel (.xls/.xlsx)</label>
-                  <div class="upload-zone" (click)="servicesInput.click()">
-                    <div class="icon">💅</div>
-                    <h4>Services Export</h4>
-                    <p>{{ selectedServicesFile ? selectedServicesFile.name : 'Click to select' }}</p>
-                    <input #servicesInput type="file" (change)="onFileChange($event, 'servicesFile')">
-                  </div>
+                <div style="margin-top: 25px; text-align: center;">
+                  <button class="deco-btn" [disabled]="!selectedBookingsFile || !selectedStaffFile || !selectedServicesFile || isJobRunning" (click)="runParser('Booksy')">
+                    ⚡ Run Booksy Parser
+                  </button>
                 </div>
               </div>
 
-              <div class="form-group" style="max-width: 250px; margin-top: 10px;">
-                <label class="form-label">Min Match Similarity %</label>
-                <input type="number" class="form-control" [(ngModel)]="booksyThreshold" min="0" max="100" step="0.5">
+              <!-- Service Extractor sub-tab -->
+              <div *ngIf="booksySubTab === 'extractor'">
+                <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
+                  Upload a Booksy visits export. Extracts unique services with price ranges, typical durations, and assigned staff. Outputs an <strong>Extracted Services.xlsx</strong> file.
+                </p>
+
+                <div class="grid-2">
+                  <div>
+                    <label class="form-label">Booksy Visits Excel (.xlsx)</label>
+                    <div class="upload-zone" (click)="booksyExtractorInput.click()">
+                      <div class="icon">🔬</div>
+                      <h4>Visits Export</h4>
+                      <p>{{ selectedBooksyExtractorFile ? selectedBooksyExtractorFile.name : 'Click to select visits file' }}</p>
+                      <input #booksyExtractorInput type="file" accept=".xlsx,.xls" (change)="onFileChange($event, 'booksyExtractorFile')">
+                    </div>
+                  </div>
+
+                  <div style="display: flex; flex-direction: column; gap: 16px; justify-content: center;">
+                    <div class="deco-card" style="padding: 16px; background: var(--surface-alt);">
+                      <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 8px;">📊 <strong>Extracted Columns:</strong></p>
+                      <ul style="font-size: 12px; color: var(--text-secondary); margin: 0; padding-left: 18px; line-height: 1.9;">
+                        <li>Service Name</li>
+                        <li>Price Min / Price Max</li>
+                        <li>Avg Final Price</li>
+                        <li>Duration Min / Max / Avg (min)</li>
+                        <li>Booking Count</li>
+                        <li>Staff Members (comma-separated)</li>
+                      </ul>
+                    </div>
+                    <div style="text-align: center;">
+                      <button class="deco-btn" [disabled]="!selectedBooksyExtractorFile || isJobRunning" (click)="runBooksyExtractor()">
+                        🔍 Extract Services
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Progress Bar (shown while running) -->
+                <div *ngIf="booksyExtractorActive" style="margin-top: 28px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 12px; color: var(--text-secondary); font-family: var(--font-body);">
+                      <span *ngIf="isJobRunning">⏳ Processing rows...</span>
+                      <span *ngIf="jobStatus === 'completed'" style="color: #4caf87;">✅ Extraction complete</span>
+                      <span *ngIf="jobStatus === 'failed'" style="color: #e05c5c;">❌ Extraction failed</span>
+                    </span>
+                    <span *ngIf="isJobRunning" style="font-size: 11px; color: var(--text-secondary);">Working…</span>
+                  </div>
+                  <div style="background: var(--surface-alt); border: 1px solid var(--border-color); border-radius: 4px; height: 8px; overflow: hidden;">
+                    <div [style.width]="jobStatus === 'completed' ? '100%' : isJobRunning ? '100%' : '0%'"
+                         [style.background]="jobStatus === 'failed' ? '#e05c5c' : 'linear-gradient(90deg, var(--accent-gold), #c9a84c)'"
+                         [class.progress-bar-animated]="isJobRunning"
+                         style="height: 100%; border-radius: 4px; transition: width 0.4s ease;">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Result Download -->
+                <div *ngIf="jobStatus === 'completed' && booksyExtractorActive" style="margin-top: 20px; text-align: center;">
+                  <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">📥 Download Extracted Services.xlsx</a>
+                </div>
+
+                <!-- Log output -->
+                <div *ngIf="jobLogText && booksyExtractorActive" style="margin-top: 20px;">
+                  <div class="log-container">{{ jobLogText }}</div>
+                </div>
+
               </div>
 
-              <div style="margin-top: 25px; text-align: center;">
-                <button class="deco-btn" [disabled]="!selectedBookingsFile || !selectedStaffFile || !selectedServicesFile || isJobRunning" (click)="runParser('Booksy')">
-                  ⚡ Run Booksy Parser
-                </button>
+              <!-- ========== CLIENTS PARSER SUB-TAB ========== -->
+              <div *ngIf="booksySubTab === 'clients-parser'">
+
+                <!-- Step 1: Upload File -->
+                <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 13px;">
+                  Upload a Booksy clients export. The tool will read its column headers and let you choose what to do with each column before producing a clean output file.
+                </p>
+
+                <div class="grid-2" style="margin-bottom: 20px;">
+                  <div>
+                    <label class="form-label">Booksy Clients Excel (.xlsx)</label>
+                    <div class="upload-zone" (click)="booksyClientsFileInput.click()">
+                      <div class="icon">📂</div>
+                      <h4>Clients Export</h4>
+                      <p>{{ booksyClientsFile ? booksyClientsFile.name : 'Click to select file' }}</p>
+                      <input #booksyClientsFileInput type="file" accept=".xlsx,.xls" (change)="onFileChange($event, 'booksyClientsFile')">
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; justify-content: center; gap: 12px;">
+                    <div class="deco-card" style="padding: 14px; background: var(--surface-alt);">
+                      <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 6px;">💡 <strong>How it works:</strong></p>
+                      <ul style="font-size: 12px; color: var(--text-secondary); margin: 0; padding-left: 16px; line-height: 1.8;">
+                        <li><strong>Keep</strong> — Column passes through unchanged</li>
+                        <li><strong>Comment+</strong> — Merged into a combined column as <code>Header: Value |</code></li>
+                        <li><strong>Delete</strong> — Column is removed from output</li>
+                      </ul>
+                    </div>
+                    <div style="text-align: center;">
+                      <button class="deco-btn" [disabled]="!booksyClientsFile || booksyClientsLoading" (click)="loadBooksyClientsHeaders()">
+                        {{ booksyClientsLoading ? 'Reading...' : '🗒️ Read Headers' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 2: Column Mapping Table (shown after headers are loaded) -->
+                <div *ngIf="booksyClientsHeaders.length > 0">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <label class="form-label" style="margin: 0;">🗓️ Column Mapping — {{ booksyClientsHeaders.length }} columns detected</label>
+                    <div style="display: flex; gap: 8px;">
+                      <button class="deco-btn" style="font-size: 11px; padding: 4px 10px;" (click)="setBooksyClientsAction('keep')">All Keep</button>
+                      <button class="deco-btn" style="font-size: 11px; padding: 4px 10px;" (click)="setBooksyClientsAction('comment')">All Comment+</button>
+                      <button class="deco-btn" style="font-size: 11px; padding: 4px 10px;" (click)="setBooksyClientsAction('delete')">All Delete</button>
+                    </div>
+                  </div>
+
+                  <div style="border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                      <thead>
+                        <tr style="background: var(--bg-card); border-bottom: 1px solid var(--border-color);">
+                          <th style="padding: 10px 14px; text-align: left; color: var(--gold-primary); font-family: var(--font-headings); font-weight: 600; width: 30%;">🗒️ Column Name</th>
+                          <th style="padding: 10px 14px; text-align: center; color: var(--gold-primary); font-family: var(--font-headings); font-weight: 600; width: 40%;">Action</th>
+                          <th style="padding: 10px 14px; text-align: left; color: var(--gold-primary); font-family: var(--font-headings); font-weight: 600; width: 30%;">Rename <span style="font-size:10px; opacity:.6;">(Keep only)</span></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let col of booksyClientsConfig; let i = index"
+                            [style.background]="i % 2 === 0 ? 'var(--bg-card)' : 'var(--surface-alt)'">
+                          <td style="padding: 9px 14px; color: var(--text-ivory); font-size: 12px;">{{ col.name }}</td>
+                          <td style="padding: 9px 14px; text-align: center;">
+                            <div style="display: flex; justify-content: center; gap: 6px;">
+                              <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; color: var(--text-secondary);">
+                                <input type="radio" [name]="'col_action_' + i" value="keep" [(ngModel)]="col.action" style="accent-color: var(--gold-primary);">
+                                Keep
+                              </label>
+                              <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; color: #c9a84c;">
+                                <input type="radio" [name]="'col_action_' + i" value="comment" [(ngModel)]="col.action" style="accent-color: #c9a84c;">
+                                Comment+
+                              </label>
+                              <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; color: #e05c5c;">
+                                <input type="radio" [name]="'col_action_' + i" value="delete" [(ngModel)]="col.action" style="accent-color: #e05c5c;">
+                                Delete
+                              </label>
+                            </div>
+                          </td>
+                          <td style="padding: 9px 14px;">
+                            <input *ngIf="col.action === 'keep'" type="text" [(ngModel)]="col.rename"
+                                   [placeholder]="col.name"
+                                   style="width: 100%; background: var(--bg-lacquer); border: 1px solid var(--border-color); color: var(--text-ivory); border-radius: 4px; padding: 4px 8px; font-size: 11px; font-family: var(--font-body);">
+                            <span *ngIf="col.action !== 'keep'" style="font-size: 11px; color: var(--text-secondary); font-style: italic;">—</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div style="text-align: center;">
+                    <button class="deco-btn" [disabled]="isJobRunning" (click)="processBooksyClients()">
+                      ⚡ Process &amp; Export
+                    </button>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div *ngIf="booksyClientsActive" style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                      <span style="font-size: 12px; color: var(--text-secondary);">
+                        <span *ngIf="isJobRunning">⏳ Building output file...</span>
+                        <span *ngIf="jobStatus === 'completed'" style="color: #4caf87;">✅ Done — file ready</span>
+                        <span *ngIf="jobStatus === 'failed'" style="color: #e05c5c;">❌ Processing failed</span>
+                      </span>
+                    </div>
+                    <div style="background: var(--surface-alt); border: 1px solid var(--border-color); border-radius: 4px; height: 8px; overflow: hidden;">
+                      <div [style.width]="jobStatus === 'completed' ? '100%' : isJobRunning ? '100%' : '0%'"
+                           [style.background]="jobStatus === 'failed' ? '#e05c5c' : 'linear-gradient(90deg, var(--accent-gold), #c9a84c)'"
+                           [class.progress-bar-animated]="isJobRunning"
+                           style="height: 100%; border-radius: 4px;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Download -->
+                  <div *ngIf="jobStatus === 'completed' && booksyClientsActive" style="margin-top: 18px; text-align: center;">
+                    <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">📥 Download Processed Clients.xlsx</a>
+                  </div>
+
+                  <!-- Logs -->
+                  <div *ngIf="jobLogText && booksyClientsActive" style="margin-top: 16px;">
+                    <div class="log-container">{{ jobLogText }}</div>
+                  </div>
+                </div>
+
               </div>
+              <!-- ========== END CLIENTS PARSER ========== -->
+
             </div>
+
 
             <!-- Dikidi Parser Tab -->
             <div *ngIf="activeParserTab === 'dikidi'">

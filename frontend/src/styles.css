@@ -719,3 +719,22 @@ body.art-deco-body {
   border: none;
   background-color: transparent;
 }
+
+/* --- PROGRESS BAR --- */
+@keyframes progress-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.progress-bar-animated {
+  background: linear-gradient(
+    90deg,
+    var(--gold-dark) 0%,
+    var(--gold-primary) 30%,
+    var(--gold-accent) 50%,
+    var(--gold-primary) 70%,
+    var(--gold-dark) 100%
+  ) !important;
+  background-size: 200% auto !important;
+  animation: progress-shimmer 1.6s linear infinite;
+}
