@@ -28,7 +28,7 @@ services:
       dockerfile: Dockerfile
     container_name: specialist_frontend
     ports:
-      - "1931:80"
+      - "4200:80"
     depends_on:
       - backend
     restart: unless-stopped

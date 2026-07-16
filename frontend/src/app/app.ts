@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +31,48 @@ export class App implements OnInit, AfterViewInit {
   activeTab: string = 'parsers';
   activeParserTab: string = 'booksy';
   activeToolTab: string = 'fuzzy-matcher';
+
+  // Konami code secret feature
+  private konamiSequence: string[] = [
+    'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+    'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
+    'b', 'a'
+  ];
+  private konamiIndex: number = 0;
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    const key = event.key;
+    const targetKey = this.konamiSequence[this.konamiIndex];
+    if (key.toLowerCase() === targetKey.toLowerCase()) {
+      this.konamiIndex++;
+      if (this.konamiIndex === this.konamiSequence.length) {
+        this.triggerKonamiSecret();
+        this.konamiIndex = 0;
+      }
+    } else {
+      this.konamiIndex = 0;
+      if (key.toLowerCase() === this.konamiSequence[0].toLowerCase()) {
+        this.konamiIndex = 1;
+      }
+    }
+  }
+
+  triggerKonamiSecret() {
+    console.log('Konami code triggered!');
+    document.body.classList.add('konami-flash');
+    
+    // --- PLACEHOLDER FOR ARBITRARY CODE EXECUTION ---
+    // If you decide what arbitrary code to execute on the website in the future,
+    // put your custom logic (e.g. eval, redirecting, mock admin actions, easter eggs) here.
+    // 
+    // console.log("Arbitrary code placeholder executing...");
+    // ------------------------------------------------
+
+    setTimeout(() => {
+      document.body.classList.remove('konami-flash');
+    }, 6000);
+  }
   
   // Parser file selections
   selectedBookingsFile: File | null = null;

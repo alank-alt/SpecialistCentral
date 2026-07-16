@@ -1,11 +1,11 @@
-# Specialist Central - Automation Center (v1.2.1)
+# Specialist Central - Automation Center (v1.2.2)
 
 **Specialist Central** is a unified, modular, and containerized automation and productivity dashboard. It is designed to assist specialists in parsing CRM exports, managing online booking widget scripts, local localizations, and maintaining documentation, all while featuring a classical Art-Deco aesthetic.
 
 ## Architecture
 
 The application runs entirely inside an orchestrated Docker environment:
-- **Frontend Container (`specialist_frontend`):** An Angular application served via Nginx on port `4200`. It proxies API requests to the backend.
+- **Frontend Container (`specialist_frontend`):** An Angular application served via Nginx on port `1931`. It proxies API requests to the backend.
 - **Backend Container (`specialist_backend`):** A Node.js Express server running on top of a Playwright-enabled base image. Serves port `3000`.
 - **SQLite Database (`db/`):** Persists configuration details, settings, and job statuses.
 - **Volume Mounts:**
@@ -51,7 +51,7 @@ To launch the entire stack:
    docker compose up --build
    ```
 3. Open your browser and navigate to:
-   - Frontend Dashboard: `http://localhost:4200`
+   - Frontend Dashboard: `http://localhost:1931`
    - Backend API: `http://localhost:3000`
 
 ---

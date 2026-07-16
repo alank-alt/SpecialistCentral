@@ -1,7 +1,109 @@
 import { AbstractParser } from './abstract-parser.js';
 import ExcelJS from 'exceljs';
-import stringSimilarity from 'string-similarity';
 import path from 'path';
+
+// Re-implementation of Python's difflib.SequenceMatcher ratio
+function getMatchingBlocks(a, b) {
+  function helper(aStart, aEnd, bStart, bEnd) {
+    if (aStart >= aEnd || bStart >= bEnd) return [];
+    
+    let bestI = 0, bestJ = 0, bestLen = 0;
+    for (let i = aStart; i < aEnd; i++) {
+      for (let j = bStart; j < bEnd; j++) {
+        let len = 0;
+        while (i + len < aEnd && j + len < bEnd && a[i + len] === b[j + len]) {
+          len++;
+        }
+        if (len > bestLen) {
+          bestI = i;
+          bestJ = j;
+          bestLen = len;
+        }
+      }
+    }
+    
+    if (bestLen === 0) return [];
+    
+    const left = helper(aStart, bestI, bStart, bestJ);
+    const right = helper(bestI + bestLen, aEnd, bestJ + bestLen, bEnd);
+    return [...left, { a: bestI, b: bestJ, size: bestLen }, ...right];
+  }
+  
+  const blocks = helper(0, a.length, 0, b.length);
+  blocks.push({ a: a.length, b: b.length, size: 0 });
+  return blocks;
+}
+
+function sequenceMatcherRatio(a, b) {
+  const blocks = getMatchingBlocks(a, b);
+  let matches = 0;
+  for (const block of blocks) {
+    matches += block.size;
+  }
+  const total = a.length + b.length;
+  if (total === 0) return 1.0;
+  return (2.0 * matches) / total;
+}
+
+function findBestMatch(query, choices) {
+  let bestChoice = '';
+  let bestScore = -1;
+  const qClean = query.toLowerCase();
+  for (const choice of choices) {
+    const cClean = choice.toLowerCase();
+    const ratio = sequenceMatcherRatio(qClean, cClean) * 100;
+    if (ratio > bestScore) {
+      bestScore = ratio;
+      bestChoice = choice;
+    }
+  }
+  return { bestMatch: bestChoice, score: bestScore };
+}
+
+// Helper to securely parse Excel or string dates in a standard way
+function parseDateSafe(val) {
+  if (val instanceof Date) return val;
+  if (!val) return null;
+  const s = String(val).trim();
+  let dt = new Date(s);
+  if (!isNaN(dt.getTime())) return dt;
+
+  const parts = s.split(/[\sT]+/);
+  if (parts.length >= 1) {
+    const dateParts = parts[0].split(/[\.\-/]/);
+    const timeParts = (parts[1] || '00:00:00').split(':');
+    if (dateParts.length === 3) {
+      let day, month, year;
+      if (dateParts[2].length === 4) {
+        day = parseInt(dateParts[0], 10);
+        month = parseInt(dateParts[1], 10) - 1;
+        year = parseInt(dateParts[2], 10);
+      } else if (dateParts[0].length === 4) {
+        year = parseInt(dateParts[0], 10);
+        month = parseInt(dateParts[1], 10) - 1;
+        day = parseInt(dateParts[2], 10);
+      }
+      
+      const hour = parseInt(timeParts[0] || '0', 10);
+      const min = parseInt(timeParts[1] || '0', 10);
+      const sec = parseInt(timeParts[2] || '0', 10);
+      dt = new Date(year, month, day, hour, min, sec);
+      if (!isNaN(dt.getTime())) return dt;
+    }
+  }
+  return null;
+}
+
+function getCellValue(cell) {
+  if (!cell) return '';
+  const val = cell.value;
+  if (val && typeof val === 'object') {
+    if (val.result !== undefined) return val.result;
+    if (val.richText) return val.richText.map(t => t.text || '').join('');
+    if (val.text) return val.text;
+  }
+  return val !== undefined && val !== null ? val : '';
+}
 
 export class BooksyParser extends AbstractParser {
   constructor() {
@@ -65,7 +167,6 @@ export class BooksyParser extends AbstractParser {
     servicesWs.eachRow((row, rowNum) => {
       const vals = row.values;
       if (rowNum === 1) {
-        // exceljs row.values is 1-indexed (first element is empty/undefined)
         servicesHeaders = Array.isArray(vals) ? vals.map(v => String(v || '').trim()) : [];
       } else {
         const nameIdx = servicesHeaders.indexOf('Имя');
@@ -84,20 +185,26 @@ export class BooksyParser extends AbstractParser {
 
     // 3. Process Bookings
     log('Processing bookings data...');
-    let bookingsHeaders = [];
+    const bookingsHeaders = [];
+    const firstRow = bookingsWs.getRow(1);
+    firstRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      bookingsHeaders[colNumber] = cell.value ? String(cell.value).trim() : '';
+    });
+
     const bookingsRows = [];
+    const newCols = ['staffer_ID', 'service_ID', 'duration', 'paid', 'method', 'match'];
+
     bookingsWs.eachRow((row, rowNum) => {
-      const vals = Array.isArray(row.values) ? row.values : [];
-      if (rowNum === 1) {
-        bookingsHeaders = vals.map(v => String(v || '').trim());
-      } else {
-        // Store the values indexed by header name for easier manipulation
-        const rowObj = {};
-        bookingsHeaders.forEach((h, idx) => {
-          if (h) rowObj[h] = vals[idx];
-        });
-        bookingsRows.push(rowObj);
-      }
+      if (rowNum === 1) return;
+      const rowObj = {};
+      newCols.forEach(col => rowObj[col] = '');
+
+      bookingsHeaders.forEach((header, colIdx) => {
+        if (header) {
+          rowObj[header] = getCellValue(row.getCell(colIdx));
+        }
+      });
+      bookingsRows.push(rowObj);
     });
 
     log(`Total bookings rows to process: ${bookingsRows.length}`);
@@ -113,51 +220,40 @@ export class BooksyParser extends AbstractParser {
       colsToDelete.forEach(col => delete row[col]);
 
       // Map final_price to paid
-      row['paid'] = row['final_price'];
+      if (row['final_price'] !== undefined && row['final_price'] !== '') {
+        row['paid'] = row['final_price'];
+      }
 
       // Process dates and duration
-      let duration = null;
+      let duration = '';
       let bookedFromStr = '';
       let bookedTillStr = '';
 
-      if (row['booked_from'] && row['booked_till']) {
-        const fromDt = new Date(row['booked_from']);
-        const tillDt = new Date(row['booked_till']);
-        if (!isNaN(fromDt.getTime()) && !isNaN(tillDt.getTime())) {
-          // Duration in seconds
-          duration = (tillDt.getTime() - fromDt.getTime()) / 1000;
-          
-          // Format as dd-mm-yyyy HH:MM
-          const pad = (n) => String(n).padStart(2, '0');
-          bookedFromStr = `${pad(fromDt.getDate())}-${pad(fromDt.getMonth() + 1)}-${fromDt.getFullYear()} ${pad(fromDt.getHours())}:${pad(fromDt.getMinutes())}`;
-          bookedTillStr = `${pad(tillDt.getDate())}-${pad(tillDt.getMonth() + 1)}-${tillDt.getFullYear()} ${pad(tillDt.getHours())}:${pad(tillDt.getMinutes())}`;
-        }
+      const fromDt = parseDateSafe(row['booked_from']);
+      const tillDt = parseDateSafe(row['booked_till']);
+
+      if (fromDt && tillDt) {
+        duration = Math.round((tillDt.getTime() - fromDt.getTime()) / 1000);
+        const pad = (n) => String(n).padStart(2, '0');
+        bookedFromStr = `${pad(fromDt.getDate())}-${pad(fromDt.getMonth() + 1)}-${fromDt.getFullYear()} ${pad(fromDt.getHours())}:${pad(fromDt.getMinutes())}`;
+        bookedTillStr = `${pad(tillDt.getDate())}-${pad(tillDt.getMonth() + 1)}-${tillDt.getFullYear()} ${pad(tillDt.getHours())}:${pad(tillDt.getMinutes())}`;
+      } else {
+        bookedFromStr = row['booked_from'] || '';
+        bookedTillStr = row['booked_till'] || '';
       }
 
       row['booked_from'] = bookedFromStr;
       row['booked_till'] = bookedTillStr;
       row['duration'] = duration;
-      row['staffer_ID'] = '';
-      row['service_ID'] = '';
-      row['method'] = ''; // default empty
-      row['match'] = '';
 
       // Staff match
       let staffScore = 0;
       const stafferName = String(row['staffer'] || '').trim();
       if (stafferName && stafferName.toLowerCase() !== 'nan' && staffList.length > 0) {
-        let bestStaff = '';
-        let bestStaffScore = 0;
-        staffList.forEach(s => {
-          const score = stringSimilarity.compareTwoStrings(stafferName.toLowerCase(), s.toLowerCase()) * 100;
-          if (score > bestStaffScore) {
-            bestStaffScore = score;
-            bestStaff = s;
-          }
-        });
-        staffScore = Math.floor(bestStaffScore * 10) / 10;
+        const { bestMatch, score } = findBestMatch(stafferName, staffList);
+        staffScore = Math.floor(score * 10) / 10.0;
         if (staffScore >= threshold) {
-          row['staffer_ID'] = staffMap[bestStaff];
+          row['staffer_ID'] = staffMap[bestMatch] || '';
         }
       }
 
@@ -165,18 +261,10 @@ export class BooksyParser extends AbstractParser {
       let serviceScore = 0;
       const serviceName = String(row['service_name'] || '').trim();
       if (serviceName && serviceName.toLowerCase() !== 'nan' && servicesList.length > 0) {
-        let bestSvc = '';
-        let bestSvcScore = 0;
-        servicesList.forEach(s => {
-          const score = stringSimilarity.compareTwoStrings(serviceName.toLowerCase(), s.toLowerCase()) * 100;
-          if (score > bestSvcScore) {
-            bestSvcScore = score;
-            bestSvc = s;
-          }
-        });
-        serviceScore = Math.floor(bestSvcScore * 10) / 10;
+        const { bestMatch, score } = findBestMatch(serviceName, servicesList);
+        serviceScore = Math.floor(score * 10) / 10.0;
         if (serviceScore >= threshold) {
-          row['service_ID'] = servicesMap[bestSvc];
+          row['service_ID'] = servicesMap[bestMatch] || '';
         }
       }
 
@@ -195,17 +283,25 @@ export class BooksyParser extends AbstractParser {
       }
     }
 
-    // 4. Write output Excel
+    // 4. Write output Excel, preserving all remaining original columns and new ones
     log('Generating output workbook...');
     const outWb = new ExcelJS.Workbook();
     const outWs = outWb.addWorksheet('Actual Upload Visits');
 
-    // Headers list
-    const finalHeaders = [
-      'staffer', 'booked_from', 'booked_till', 'customer_first_name', 'customer_last_name',
-      'customer_card_phone', 'service_name', 'final_price', 'status', 'business_note',
-      'staffer_ID', 'service_ID', 'duration', 'paid', 'method', 'match'
-    ];
+    // Build headers list preserving order of original file remaining columns
+    const remainingHeaders = [];
+    bookingsHeaders.forEach(h => {
+      if (h && !colsToDelete.includes(h)) {
+        remainingHeaders.push(h);
+      }
+    });
+
+    const finalHeaders = [...remainingHeaders];
+    newCols.forEach(col => {
+      if (!finalHeaders.includes(col)) {
+        finalHeaders.push(col);
+      }
+    });
 
     outWs.addRow(finalHeaders);
 

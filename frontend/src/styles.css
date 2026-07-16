@@ -738,3 +738,29 @@ body.art-deco-body {
   background-size: 200% auto !important;
   animation: progress-shimmer 1.6s linear infinite;
 }
+
+/* --- KONAMI CODE EASTER EGG (NEON FLASHING BORDERS) --- */
+@keyframes konami-glow {
+  0%, 100% {
+    filter: blur(0px);
+    box-shadow: none;
+    border-color: rgba(207, 161, 83, 0.25);
+  }
+  50% {
+    filter: blur(0.5px);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.9), inset 0 0 8px rgba(255, 215, 0, 0.4);
+    border-color: #ffd700;
+  }
+}
+
+body.konami-flash hr,
+body.konami-flash .upload-zone,
+body.konami-flash .deco-card,
+body.konami-flash .form-control,
+body.konami-flash .deco-tab-btn,
+body.konami-flash .deco-btn,
+body.konami-flash table,
+body.konami-flash th,
+body.konami-flash td {
+  animation: konami-glow 1s infinite alternate ease-in-out !important;
+}

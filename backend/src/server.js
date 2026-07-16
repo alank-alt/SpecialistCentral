@@ -226,7 +226,7 @@ function mapClientHeader(h) {
 }
 
 function normalizeClientPhone(p) {
-  return String(p ?? "").trim().replace(/[\s\-\(\)\+]/g, "");
+  return String(p ?? "").trim().replace(/\s+/g, "");
 }
 
 function splitClientLine(line) {
@@ -375,94 +375,107 @@ app.post('/api/tools/upload-clients', upload.single('clientsFile'), (req, res) =
       const authHeaders = {
         'Authorization': `Bearer ${token}, User ${userToken}`,
         'Accept': 'application/vnd.api.v2+json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Origin': 'https://alteg.io',
+        'Referer': 'https://alteg.io/'
       };
 
       let updatedCount = 0;
       let notFoundCount = 0;
       let errorCount = 0;
 
-      // 3. Process each client
-      for (let i = 0; i < parsedClients.length; i++) {
-        const client = parsedClients[i];
-        logToJob(jobId, `[${i + 1}/${parsedClients.length}] Processing phone: ${client.phone}`);
+      const MAX_CONCURRENCY = 3;
+      const DELAY_MS = 220;
+      let nextIndex = 0;
 
-        try {
-          // A. Search client by phone
-          const searchBody = {
-            page: 1,
-            page_size: 50,
-            fields: ['id', 'name'],
-            order_by: 'name',
-            order_by_direction: 'desc',
-            operation: 'AND',
-            filters: [
-              {
-                type: 'quick_search',
-                state: { value: client.phone }
-              }
-            ]
-          };
+      const worker = async () => {
+        while (nextIndex < parsedClients.length) {
+          const i = nextIndex++;
+          if (i >= parsedClients.length) break;
+          const client = parsedClients[i];
+          logToJob(jobId, `[${i + 1}/${parsedClients.length}] Processing phone: ${client.phone}`);
 
-          const searchUrl = `https://api.alteg.io/api/v1/company/${companyId}/clients/search`;
-          const searchRes = await fetch(searchUrl, {
-            method: 'POST',
-            headers: authHeaders,
-            body: JSON.stringify(searchBody)
-          });
+          try {
+            // A. Search client by phone
+            const searchBody = {
+              page: 1,
+              page_size: 50,
+              fields: ['id', 'name'],
+              order_by: 'name',
+              order_by_direction: 'desc',
+              operation: 'AND',
+              filters: [
+                {
+                  type: 'quick_search',
+                  state: { value: client.phone }
+                }
+              ]
+            };
 
-          if (!searchRes.ok) {
-            const errText = await searchRes.text();
-            throw new Error(`Search failed: HTTP ${searchRes.status} - ${errText}`);
+            const searchUrl = `https://api.alteg.io/api/v1/company/${companyId}/clients/search`;
+            const searchRes = await fetch(searchUrl, {
+              method: 'POST',
+              headers: authHeaders,
+              body: JSON.stringify(searchBody)
+            });
+
+            if (!searchRes.ok) {
+              const errText = await searchRes.text();
+              throw new Error(`Search failed: HTTP ${searchRes.status} - ${errText}`);
+            }
+
+            const searchJson = await searchRes.json();
+            const list = extractClientList(searchJson);
+
+            if (!list || list.length === 0) {
+              logToJob(jobId, `  [Warning] Client not found for phone ${client.phone}`);
+              notFoundCount++;
+              continue;
+            }
+
+            const clientId = list[0].id;
+
+            // B. Update name/surname/patronymic if any is present
+            const hasNameFields = !!(client.firstName || client.surname || client.patronymic);
+            if (!hasNameFields) {
+              logToJob(jobId, `  [Warning] Nothing to update for client ${clientId} (empty fields)`);
+              notFoundCount++;
+              continue;
+            }
+
+            const updatePayload = { phone: client.phone };
+            if (client.firstName) updatePayload.name = client.firstName;
+            if (client.surname) updatePayload.surname = client.surname;
+            if (client.patronymic) updatePayload.patronymic = client.patronymic;
+
+            const putUrl = `https://api.alteg.io/api/v1/client/${companyId}/${clientId}`;
+            const putRes = await fetch(putUrl, {
+              method: 'PUT',
+              headers: authHeaders,
+              body: JSON.stringify(updatePayload)
+            });
+
+            if (putRes.ok) {
+              updatedCount++;
+              logToJob(jobId, `  Successfully updated client ID ${clientId} with new details.`);
+            } else {
+              const errText = await putRes.text();
+              throw new Error(`PUT failed: HTTP ${putRes.status} - ${errText}`);
+            }
+
+          } catch (err) {
+            errorCount++;
+            logToJob(jobId, `  [Error] Failed processing phone ${client.phone}: ${err.message}`);
           }
 
-          const searchJson = await searchRes.json();
-          const list = extractClientList(searchJson);
-
-          if (!list || list.length === 0) {
-            logToJob(jobId, `  [Warning] Client not found for phone ${client.phone}`);
-            notFoundCount++;
-            continue;
-          }
-
-          const clientId = list[0].id;
-
-          // B. Update name/surname/patronymic if any is present
-          const hasNameFields = !!(client.firstName || client.surname || client.patronymic);
-          if (!hasNameFields) {
-            logToJob(jobId, `  [Warning] Nothing to update for client ${clientId} (empty fields)`);
-            notFoundCount++;
-            continue;
-          }
-
-          const updatePayload = { phone: client.phone };
-          if (client.firstName) updatePayload.name = client.firstName;
-          if (client.surname) updatePayload.surname = client.surname;
-          if (client.patronymic) updatePayload.patronymic = client.patronymic;
-
-          const putUrl = `https://api.alteg.io/api/v1/client/${companyId}/${clientId}`;
-          const putRes = await fetch(putUrl, {
-            method: 'PUT',
-            headers: authHeaders,
-            body: JSON.stringify(updatePayload)
-          });
-
-          if (putRes.ok) {
-            updatedCount++;
-            logToJob(jobId, `  Successfully updated client ID ${clientId} with new details.`);
-          } else {
-            const errText = await putRes.text();
-            throw new Error(`PUT failed: HTTP ${putRes.status} - ${errText}`);
-          }
-
-        } catch (err) {
-          errorCount++;
-          logToJob(jobId, `  [Error] Failed processing phone ${client.phone}: ${err.message}`);
+          // Delay after processing to avoid hitting limits
+          await new Promise(resolve => setTimeout(resolve, DELAY_MS));
         }
+      };
 
-        // Delay to protect against rate limiting (429)
-        await new Promise(resolve => setTimeout(resolve, 220));
-      }
+      const workers = Array.from({ length: Math.min(MAX_CONCURRENCY, parsedClients.length) }, () => worker());
+      await Promise.all(workers);
 
       logToJob(jobId, `Clients update job finished!`);
       logToJob(jobId, `Summary: Updated: ${updatedCount}, Not Found: ${notFoundCount}, Errors: ${errorCount}`);
