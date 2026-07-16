@@ -82,8 +82,8 @@ if (!fs.existsSync(welcomeFile)) {
 
 This is your Knowledge Base. Here you can document and read company guidelines, glossaries, and tasks.
 
-## Art-Deco Automation Hub
-Form and function are one. Feel free to create and edit articles. All files are loaded instantly from persistent volume mounts.
+## Automation Center
+Feel free to create and edit articles. All files are loaded instantly from persistent volume mounts.
 `);
 }
 
@@ -1211,7 +1211,7 @@ app.post('/api/tools/booksy-extract-services', upload.single('visitsFile'), asyn
       const outPath = path.join(uploadsDir, outFilename);
       await outWb.xlsx.writeFile(outPath);
 
-      logToJob(jobId, `✅ Extraction complete. ${serviceMap.size} services written.`);
+      logToJob(jobId, `Extraction complete. ${serviceMap.size} services written.`);
       updateJobStatus(jobId, 'completed', outFilename);
 
       // Clean up uploaded input
@@ -1411,7 +1411,7 @@ app.post('/api/tools/booksy-clients/process', upload.single('clientsFile'), asyn
       const outPath = path.join(uploadsDir, outFilename);
       await outWb.xlsx.writeFile(outPath);
 
-      logToJob(jobId, `✅ Done. ${validRows.length} clients exported | ${discardRows.length} discarded.`);
+      logToJob(jobId, `Done. ${validRows.length} clients exported | ${discardRows.length} discarded.`);
       updateJobStatus(jobId, 'completed', outFilename);
       fs.unlink(file.path, () => {});
 

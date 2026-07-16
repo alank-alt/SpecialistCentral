@@ -1,7 +1,7 @@
 {
   "name": "specialist-central-backend",
-  "version": "1.0.0",
-  "description": "NodeJS backend for Specialist Central Art-Deco Automation Hub",
+  "version": "1.2.1",
+  "description": "NodeJS backend for Specialist Central Automation Center",
   "main": "src/server.js",
   "type": "module",
   "scripts": {

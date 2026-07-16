@@ -144,6 +144,13 @@ export class App implements OnInit, AfterViewInit {
   widgetLabEditMode: boolean = false;
   widgetScriptIsNew: boolean = false;
 
+  // Tampermonkey editor state variables
+  tampermonkeyEditMode: boolean = false;
+  tampermonkeyScriptIsNew: boolean = false;
+  activeTampermonkeyScriptName: string = '';
+  tampermonkeyScriptNameInput: string = '';
+  activeTampermonkeyCode: string = '';
+
   // Wiki articles
   wikiArticles: string[] = [];
   activeWikiArticle: string = '';
@@ -188,8 +195,8 @@ export class App implements OnInit, AfterViewInit {
 
   getTabTitle(): string {
     switch (this.activeTab) {
-      case 'parsers': return 'Parsing Center';
-      case 'tools': return 'Upload & Match Tools';
+      case 'parsers': return 'CRM File Processor';
+      case 'tools': return 'Update & Match Tools';
       case 'widget-lab': return 'Widget Customization Lab';
       case 'tampermonkey': return 'Tampermonkey Gallery';
       case 'wiki': return 'Knowledge Base';
@@ -583,7 +590,7 @@ export class App implements OnInit, AfterViewInit {
           
           <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 8px; border: 1px solid #f0f0f0; border-radius: 8px;">
             <div class="any-staff-icon-container">
-              <span class="any-staff-icon">👤</span>
+              <span class="any-staff-icon"></span>
             </div>
             <div>
               <div data-locator="master_name">Любой специалист</div>
@@ -616,7 +623,7 @@ export class App implements OnInit, AfterViewInit {
 
           <div class="order-actions">
             <div class="order-tag success">
-              <span data-locator="success_icon">✅</span>
+              <span data-locator="success_icon"></span>
               <span data-locator="created_booking_page_title">Запись успешно создана!</span>
             </div>
           </div>
@@ -662,6 +669,75 @@ export class App implements OnInit, AfterViewInit {
 
   oneClickInstall(name: string) {
     window.open(`/scripts/download/${name}`, '_blank');
+  }
+
+  // --- TAMPERMONKEY MANUAL SCRIPT MANAGEMENT ---
+  startCreateTampermonkeyScript() {
+    this.activeTampermonkeyScriptName = '';
+    this.tampermonkeyScriptNameInput = '';
+    this.activeTampermonkeyCode = `// ==UserScript==\n// @name         New Userscript\n// @namespace    http://tampermonkey.net/\n// @version      1.0\n// @description  Custom Tampermonkey script\n// @author       You\n// @match        https://*.alteg.io/*\n// @match        https://*.altegio.com/*\n// @grant        none\n// ==UserScript==\n\n(function() {\n    'use strict';\n    console.log("Tampermonkey script initialized");\n})();`;
+    this.tampermonkeyScriptIsNew = true;
+    this.tampermonkeyEditMode = true;
+    this.cdr.detectChanges();
+  }
+
+  selectTampermonkeyScript(name: string) {
+    this.activeTampermonkeyScriptName = name;
+    this.tampermonkeyScriptNameInput = name;
+    this.tampermonkeyScriptIsNew = false;
+
+    this.http.get(`/api/scripts/content?name=${name}`, { responseType: 'text' }).subscribe({
+      next: (code) => {
+        this.activeTampermonkeyCode = code;
+        this.tampermonkeyEditMode = true;
+        this.cdr.detectChanges();
+      },
+      error: (err) => alert('Failed to read script contents')
+    });
+  }
+
+  saveTampermonkeyScript() {
+    let filename = this.tampermonkeyScriptNameInput.trim();
+    if (!filename) {
+      alert('File name is required');
+      return;
+    }
+
+    if (!filename.endsWith('.user.js')) {
+      if (filename.endsWith('.js')) {
+        filename = filename.slice(0, -3) + '.user.js';
+      } else {
+        filename = filename + '.user.js';
+      }
+    }
+
+    this.http.post('/api/scripts/save', {
+      name: filename,
+      content: this.activeTampermonkeyCode
+    }).subscribe({
+      next: () => {
+        alert('Tampermonkey script successfully saved.');
+        this.tampermonkeyEditMode = false;
+        this.loadTampermonkeyScriptsList();
+      },
+      error: (err: any) => alert('Failed to save script: ' + (err.error?.error || err.message))
+    });
+  }
+
+  deleteTampermonkeyScript(name: string) {
+    if (confirm(`Are you sure you want to delete Tampermonkey script: ${name}?`)) {
+      this.http.delete(`/api/scripts/delete?name=${name}`).subscribe({
+        next: () => {
+          this.loadTampermonkeyScriptsList();
+        },
+        error: (err) => alert('Failed to delete: ' + err.message)
+      });
+    }
+  }
+
+  exitTampermonkeyEditor() {
+    this.tampermonkeyEditMode = false;
+    this.loadTampermonkeyScriptsList();
   }
 
   // --- WIKI KNOWLEDGE BASE ---

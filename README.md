@@ -1,4 +1,4 @@
-# Specialist Central - Art-Deco Automation Hub (v1.1)
+# Specialist Central - Automation Center (v1.2.1)
 
 **Specialist Central** is a unified, modular, and containerized automation and productivity dashboard. It is designed to assist specialists in parsing CRM exports, managing online booking widget scripts, local localizations, and maintaining documentation, all while featuring a classical Art-Deco aesthetic.
 

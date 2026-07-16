@@ -5,45 +5,44 @@
       <h1>Specialist</h1>
       <p>Central</p>
       <div class="logo-divider"></div>
-      <p>Art-Deco Automation Hub</p>
+      <p>Automation Center</p>
     </div>
 
     <ul class="nav-links">
       <li class="nav-item">
         <button class="nav-btn" [class.active]="activeTab === 'parsers'" (click)="setActiveTab('parsers')">
-          <span class="icon">⚙️</span> Parsing Center
+          CRM File Processor
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-btn" [class.active]="activeTab === 'tools'" (click)="setActiveTab('tools')">
-          <span class="icon">🛠️</span> Upload & Match
+          Update & Match
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-btn" [class.active]="activeTab === 'widget-lab'" (click)="setActiveTab('widget-lab')">
-          <span class="icon">⚡</span> Widget Lab
+          Widget Lab
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-btn" [class.active]="activeTab === 'tampermonkey'" (click)="setActiveTab('tampermonkey')">
-          <span class="icon">🐒</span> Tampermonkey
+          Tampermonkey
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-btn" [class.active]="activeTab === 'wiki'" (click)="setActiveTab('wiki')">
-          <span class="icon">📖</span> Knowledge Base
+          Knowledge Base
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-btn" [class.active]="activeTab === 'settings'" (click)="setActiveTab('settings')">
-          <span class="icon">🔑</span> API Credentials
+          API Credentials
         </button>
       </li>
     </ul>
 
     <div class="sidebar-footer">
-      <div>Form & Function</div>
-      <div style="font-size: 8px; margin-top: 5px; opacity: 0.5;">v1.1</div>
+      <div style="font-size: 8px; margin-top: 5px; opacity: 0.5;">v1.2.1</div>
     </div>
   </aside>
 
@@ -60,7 +59,7 @@
     <div class="content-wrapper">
       <div [class]="activeTab === 'widget-lab' || activeTab === 'wiki' ? 'wide-content-block' : 'centered-content-block'">
 
-        <!-- ================= MODULE A: PARSING CENTER ================= -->
+        <!-- ================= MODULE A: CRM FILE PROCESSOR ================= -->
         <div *ngIf="activeTab === 'parsers'">
           <div class="deco-card">
             <div class="deco-card-title">
@@ -78,9 +77,9 @@
 
               <!-- Inner Booksy sub-tabs -->
               <div class="deco-tabs" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-                <button class="deco-tab-btn" [class.active]="booksySubTab === 'parser'" (click)="booksySubTab = 'parser'">⚡ Parser</button>
-                <button class="deco-tab-btn" [class.active]="booksySubTab === 'extractor'" (click)="booksySubTab = 'extractor'">🔍 Service Extractor</button>
-                <button class="deco-tab-btn" [class.active]="booksySubTab === 'clients-parser'" (click)="booksySubTab = 'clients-parser'">👤 Clients Parser</button>
+                <button class="deco-tab-btn" [class.active]="booksySubTab === 'parser'" (click)="booksySubTab = 'parser'">Parser</button>
+                <button class="deco-tab-btn" [class.active]="booksySubTab === 'extractor'" (click)="booksySubTab = 'extractor'">Service Extractor</button>
+                <button class="deco-tab-btn" [class.active]="booksySubTab === 'clients-parser'" (click)="booksySubTab = 'clients-parser'">Clients Parser</button>
               </div>
 
               <!-- Parser sub-tab -->
@@ -98,7 +97,6 @@
                   <div>
                     <label class="form-label">Bookings Excel (.xlsx)</label>
                     <div class="upload-zone" (click)="bookingsInput.click()">
-                      <div class="icon">📥</div>
                       <h4>Visits File</h4>
                       <p>{{ selectedBookingsFile ? selectedBookingsFile.name : 'Click to select' }}</p>
                       <input #bookingsInput type="file" (change)="onFileChange($event, 'bookingsFile')">
@@ -108,7 +106,6 @@
                   <div>
                     <label class="form-label">Staff Excel (.xlsx)</label>
                     <div class="upload-zone" (click)="staffInput.click()">
-                      <div class="icon">👥</div>
                       <h4>Staff &amp; IDs</h4>
                       <p>{{ selectedStaffFile ? selectedStaffFile.name : 'Click to select' }}</p>
                       <input #staffInput type="file" (change)="onFileChange($event, 'staffFile')">
@@ -118,7 +115,6 @@
                   <div>
                     <label class="form-label">Services Excel (.xls/.xlsx)</label>
                     <div class="upload-zone" (click)="servicesInput.click()">
-                      <div class="icon">💅</div>
                       <h4>Services Export</h4>
                       <p>{{ selectedServicesFile ? selectedServicesFile.name : 'Click to select' }}</p>
                       <input #servicesInput type="file" (change)="onFileChange($event, 'servicesFile')">
@@ -133,7 +129,7 @@
 
                 <div style="margin-top: 25px; text-align: center;">
                   <button class="deco-btn" [disabled]="!selectedBookingsFile || !selectedStaffFile || !selectedServicesFile || isJobRunning" (click)="runParser('Booksy')">
-                    ⚡ Run Booksy Parser
+                    Run Booksy Parser
                   </button>
                 </div>
               </div>
@@ -148,7 +144,6 @@
                   <div>
                     <label class="form-label">Booksy Visits Excel (.xlsx)</label>
                     <div class="upload-zone" (click)="booksyExtractorInput.click()">
-                      <div class="icon">🔬</div>
                       <h4>Visits Export</h4>
                       <p>{{ selectedBooksyExtractorFile ? selectedBooksyExtractorFile.name : 'Click to select visits file' }}</p>
                       <input #booksyExtractorInput type="file" accept=".xlsx,.xls" (change)="onFileChange($event, 'booksyExtractorFile')">
@@ -157,7 +152,7 @@
 
                   <div style="display: flex; flex-direction: column; gap: 16px; justify-content: center;">
                     <div class="deco-card" style="padding: 16px; background: var(--surface-alt);">
-                      <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 8px;">📊 <strong>Extracted Columns:</strong></p>
+                      <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 8px;"><strong>Extracted Columns:</strong></p>
                       <ul style="font-size: 12px; color: var(--text-secondary); margin: 0; padding-left: 18px; line-height: 1.9;">
                         <li>Service Name</li>
                         <li>Price Min / Price Max</li>
@@ -169,7 +164,7 @@
                     </div>
                     <div style="text-align: center;">
                       <button class="deco-btn" [disabled]="!selectedBooksyExtractorFile || isJobRunning" (click)="runBooksyExtractor()">
-                        🔍 Extract Services
+                        Extract Services
                       </button>
                     </div>
                   </div>
@@ -179,9 +174,9 @@
                 <div *ngIf="booksyExtractorActive" style="margin-top: 28px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span style="font-size: 12px; color: var(--text-secondary); font-family: var(--font-body);">
-                      <span *ngIf="isJobRunning">⏳ Processing rows...</span>
-                      <span *ngIf="jobStatus === 'completed'" style="color: #4caf87;">✅ Extraction complete</span>
-                      <span *ngIf="jobStatus === 'failed'" style="color: #e05c5c;">❌ Extraction failed</span>
+                      <span *ngIf="isJobRunning">Processing rows...</span>
+                      <span *ngIf="jobStatus === 'completed'" style="color: #4caf87;">Extraction complete</span>
+                      <span *ngIf="jobStatus === 'failed'" style="color: #e05c5c;">Extraction failed</span>
                     </span>
                     <span *ngIf="isJobRunning" style="font-size: 11px; color: var(--text-secondary);">Working…</span>
                   </div>
@@ -196,7 +191,7 @@
 
                 <!-- Result Download -->
                 <div *ngIf="jobStatus === 'completed' && booksyExtractorActive" style="margin-top: 20px; text-align: center;">
-                  <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">📥 Download Extracted Services.xlsx</a>
+                  <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">Download Extracted Services.xlsx</a>
                 </div>
 
                 <!-- Log output -->
@@ -218,7 +213,6 @@
                   <div>
                     <label class="form-label">Booksy Clients Excel (.xlsx)</label>
                     <div class="upload-zone" (click)="booksyClientsFileInput.click()">
-                      <div class="icon">📂</div>
                       <h4>Clients Export</h4>
                       <p>{{ booksyClientsFile ? booksyClientsFile.name : 'Click to select file' }}</p>
                       <input #booksyClientsFileInput type="file" accept=".xlsx,.xls" (change)="onFileChange($event, 'booksyClientsFile')">
@@ -226,7 +220,7 @@
                   </div>
                   <div style="display: flex; flex-direction: column; justify-content: center; gap: 12px;">
                     <div class="deco-card" style="padding: 14px; background: var(--surface-alt);">
-                      <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 6px;">💡 <strong>How it works:</strong></p>
+                      <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 6px;"><strong>How it works:</strong></p>
                       <ul style="font-size: 12px; color: var(--text-secondary); margin: 0; padding-left: 16px; line-height: 1.8;">
                         <li><strong>Keep</strong> — Column passes through unchanged</li>
                         <li><strong>Comment+</strong> — Merged into a combined column as <code>Header: Value |</code></li>
@@ -235,7 +229,7 @@
                     </div>
                     <div style="text-align: center;">
                       <button class="deco-btn" [disabled]="!booksyClientsFile || booksyClientsLoading" (click)="loadBooksyClientsHeaders()">
-                        {{ booksyClientsLoading ? 'Reading...' : '🗒️ Read Headers' }}
+                        {{ booksyClientsLoading ? 'Reading...' : 'Read Headers' }}
                       </button>
                     </div>
                   </div>
@@ -244,7 +238,7 @@
                 <!-- Step 2: Column Mapping Table (shown after headers are loaded) -->
                 <div *ngIf="booksyClientsHeaders.length > 0">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <label class="form-label" style="margin: 0;">🗓️ Column Mapping — {{ booksyClientsHeaders.length }} columns detected</label>
+                    <label class="form-label" style="margin: 0;">Column Mapping — {{ booksyClientsHeaders.length }} columns detected</label>
                     <div style="display: flex; gap: 8px;">
                       <button class="deco-btn" style="font-size: 11px; padding: 4px 10px;" (click)="setBooksyClientsAction('keep')">All Keep</button>
                       <button class="deco-btn" style="font-size: 11px; padding: 4px 10px;" (click)="setBooksyClientsAction('comment')">All Comment+</button>
@@ -256,7 +250,7 @@
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                       <thead>
                         <tr style="background: var(--bg-card); border-bottom: 1px solid var(--border-color);">
-                          <th style="padding: 10px 14px; text-align: left; color: var(--gold-primary); font-family: var(--font-headings); font-weight: 600; width: 30%;">🗒️ Column Name</th>
+                          <th style="padding: 10px 14px; text-align: left; color: var(--gold-primary); font-family: var(--font-headings); font-weight: 600; width: 30%;">Column Name</th>
                           <th style="padding: 10px 14px; text-align: center; color: var(--gold-primary); font-family: var(--font-headings); font-weight: 600; width: 40%;">Action</th>
                           <th style="padding: 10px 14px; text-align: left; color: var(--gold-primary); font-family: var(--font-headings); font-weight: 600; width: 30%;">Rename <span style="font-size:10px; opacity:.6;">(Keep only)</span></th>
                         </tr>
@@ -294,7 +288,7 @@
 
                   <div style="text-align: center;">
                     <button class="deco-btn" [disabled]="isJobRunning" (click)="processBooksyClients()">
-                      ⚡ Process &amp; Export
+                      Process &amp; Export
                     </button>
                   </div>
 
@@ -302,9 +296,9 @@
                   <div *ngIf="booksyClientsActive" style="margin-top: 24px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                       <span style="font-size: 12px; color: var(--text-secondary);">
-                        <span *ngIf="isJobRunning">⏳ Building output file...</span>
-                        <span *ngIf="jobStatus === 'completed'" style="color: #4caf87;">✅ Done — file ready</span>
-                        <span *ngIf="jobStatus === 'failed'" style="color: #e05c5c;">❌ Processing failed</span>
+                        <span *ngIf="isJobRunning">Building output file...</span>
+                        <span *ngIf="jobStatus === 'completed'" style="color: #4caf87;">Done — file ready</span>
+                        <span *ngIf="jobStatus === 'failed'" style="color: #e05c5c;">Processing failed</span>
                       </span>
                     </div>
                     <div style="background: var(--surface-alt); border: 1px solid var(--border-color); border-radius: 4px; height: 8px; overflow: hidden;">
@@ -317,7 +311,7 @@
 
                   <!-- Download -->
                   <div *ngIf="jobStatus === 'completed' && booksyClientsActive" style="margin-top: 18px; text-align: center;">
-                    <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">📥 Download Processed Clients.xlsx</a>
+                    <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">Download Processed Clients.xlsx</a>
                   </div>
 
                   <!-- Logs -->
@@ -347,7 +341,6 @@
                 <div>
                   <label class="form-label">Dikidi Visits Export (.xlsx)</label>
                   <div class="upload-zone" (click)="dikidiVisitsInput.click()">
-                    <div class="icon">📥</div>
                     <h4>Visits File</h4>
                     <p>{{ selectedDikidiVisitsFile ? selectedDikidiVisitsFile.name : 'Click to select' }}</p>
                     <input #dikidiVisitsInput type="file" (change)="onFileChange($event, 'dikidiVisitsFile')">
@@ -357,7 +350,6 @@
                 <div>
                   <label class="form-label">Worksheet Mapping (Optional .xlsx)</label>
                   <div class="upload-zone" (click)="worksheetInput.click()">
-                    <div class="icon">📋</div>
                     <h4>Worksheet IDs Lookup</h4>
                     <p>{{ selectedWorksheetFile ? selectedWorksheetFile.name : 'Click to select' }}</p>
                     <input #worksheetInput type="file" (change)="onFileChange($event, 'worksheetFile')">
@@ -367,7 +359,7 @@
 
               <div style="margin-top: 25px; text-align: center;">
                 <button class="deco-btn" [disabled]="!selectedDikidiVisitsFile || isJobRunning" (click)="runParser('Dikidi')">
-                  ⚡ Run Dikidi Parser
+                  Run Dikidi Parser
                 </button>
               </div>
             </div>
@@ -387,7 +379,6 @@
                 <div>
                   <label class="form-label">Zapis.kz Visits File (.xlsx)</label>
                   <div class="upload-zone" (click)="zapisVisitsInput.click()">
-                    <div class="icon">📥</div>
                     <h4>Visits File</h4>
                     <p>{{ selectedZapisVisitsFile ? selectedZapisVisitsFile.name : 'Click to select' }}</p>
                     <input #zapisVisitsInput type="file" (change)="onFileChange($event, 'zapisVisitsFile')">
@@ -397,7 +388,6 @@
                 <div>
                   <label class="form-label">Zapis.kz Inventory File (Optional .xlsx)</label>
                   <div class="upload-zone" (click)="zapisInventoryInput.click()">
-                    <div class="icon">📦</div>
                     <h4>Inventory File</h4>
                     <p>{{ selectedZapisInventoryFile ? selectedZapisInventoryFile.name : 'Click to select' }}</p>
                     <input #zapisInventoryInput type="file" (change)="onFileChange($event, 'zapisInventoryFile')">
@@ -407,7 +397,7 @@
 
               <div style="margin-top: 25px; text-align: center;">
                 <button class="deco-btn" [disabled]="!selectedZapisVisitsFile || isJobRunning" (click)="runParser('Zapis.kz')">
-                  ⚡ Run Zapis Parser
+                  Run Zapis Parser
                 </button>
               </div>
             </div>
@@ -426,13 +416,13 @@
               <div class="log-container" #logContainer>{{ jobLogText }}</div>
 
               <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center; justify-content: center;" *ngIf="jobStatus === 'completed'">
-                <span style="color: #55ff55; font-size: 13px;">✅ Processing Completed!</span>
+                <span style="color: #55ff55; font-size: 13px;">Processing Completed!</span>
                 <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none; padding: 8px 20px; font-size: 12px;">
-                  📥 Download Results
+                  Download Results
                 </a>
               </div>
               <div style="margin-top: 15px; color: #ff5555; font-size: 13px; text-align: center;" *ngIf="jobStatus === 'failed'">
-                ❌ Processing Failed.
+                Processing Failed.
               </div>
             </div>
 
@@ -464,7 +454,6 @@
                   </p>
 
                   <div class="upload-zone" (click)="matchFileInput.click()">
-                    <div class="icon">📊</div>
                     <h4>Matcher Spreadsheet</h4>
                     <p>{{ selectedMatchFile ? selectedMatchFile.name : 'Select file with main & lib sheets' }}</p>
                     <input #matchFileInput type="file" (change)="onFileChange($event, 'matchFile')">
@@ -476,7 +465,7 @@
                   </div>
 
                   <button class="deco-btn" [disabled]="!selectedMatchFile || isJobRunning" (click)="runFuzzyMatcherFile()" style="margin-top: 10px; width: 100%;">
-                    ⚡ Process Excel Match
+                    Process Excel Match
                   </button>
                 </div>
 
@@ -504,7 +493,7 @@
                   </div>
 
                   <button class="deco-btn" [disabled]="!textMain || !textLib" (click)="runFuzzyMatcherText()" style="margin-top: 10px; width: 100%;">
-                    ⚡ Compare Columns
+                    Compare Columns
                   </button>
                 </div>
               </div>
@@ -546,7 +535,7 @@
                 </div>
                 <div class="log-container">{{ jobLogText }}</div>
                 <div style="margin-top: 15px; text-align: center;" *ngIf="jobStatus === 'completed'">
-                  <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">📥 Download Matched Excel</a>
+                  <a [href]="'/api/files/download/' + resultFile" class="deco-btn" style="text-decoration: none;">Download Matched Excel</a>
                 </div>
               </div>
 
@@ -571,7 +560,6 @@
                     Column Headers required: <code>Phone</code>, <code>First Name</code>, and <code>Surname</code>.
                   </p>
                   <div class="upload-zone" (click)="clientsFileInput.click()">
-                    <div class="icon">📁</div>
                     <h4>Upload Excel Sheet</h4>
                     <p>{{ selectedClientsFile ? selectedClientsFile.name : 'Click to select client file' }}</p>
                     <input #clientsFileInput type="file" (change)="onFileChange($event, 'clientsFile')">
@@ -590,7 +578,7 @@
 
               <div style="text-align: center; margin-top: 25px;">
                 <button class="deco-btn" [disabled]="(!selectedClientsFile && !clientsTextPaste) || !clientsCompanyId || isJobRunning" (click)="syncClientsToAltegio()">
-                  ⚡ Update Clients Surnames
+                  Update Clients Surnames
                 </button>
               </div>
 
@@ -640,7 +628,6 @@
                     Column A: Original {{ translationMode === 'categories' ? 'Category' : 'Service' }} Name / ID. Column B: Translated Value.
                   </p>
                   <div class="upload-zone" (click)="transFileInput.click()">
-                    <div class="icon">📁</div>
                     <h4>Upload Excel Sheet</h4>
                     <p>{{ selectedTransFile ? selectedTransFile.name : 'Click to select translation file' }}</p>
                     <input #transFileInput type="file" (change)="onFileChange($event, 'transFile')">
@@ -659,7 +646,7 @@
 
               <div style="text-align: center; margin-top: 25px;">
                 <button class="deco-btn" [disabled]="(!selectedTransFile && !translationsTextPaste) || !transCompanyId || isJobRunning" (click)="syncTranslationsToAltegio()">
-                  ⚡ Sync Mapped Translations to Altegio
+                  Sync Mapped Translations to Altegio
                 </button>
               </div>
               
@@ -680,7 +667,7 @@
             <div class="deco-card-title">
               <span>Widget Customization Lab</span>
               <button class="deco-btn" style="padding: 8px 20px; font-size: 12px;" (click)="startCreateWidgetScript()">
-                ➕ New Widget Script
+                New Widget Script
               </button>
             </div>
             
@@ -699,7 +686,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                   <button class="deco-btn" style="padding: 6px 15px; font-size: 11px; flex-grow: 1;" (click)="selectWidgetScript(s.name)">
-                    ⚙️ Open Editor & Simulate
+                    Open Editor & Simulate
                   </button>
                   <button class="deco-btn deco-btn-outline" style="padding: 6px 12px; font-size: 11px; border-color: #ff5555; color: #ff5555;" (click)="deleteWidgetScript(s.name)">
                     ✕
@@ -763,9 +750,13 @@
 
       <!-- ================= MODULE D: TAMPERMONKEY GALLERY ================= -->
       <div *ngIf="activeTab === 'tampermonkey'">
-        <div class="deco-card">
+        <!-- View 1: List -->
+        <div class="deco-card" *ngIf="!tampermonkeyEditMode">
           <div class="deco-card-title">
             <span>Tampermonkey UserScripts Gallery</span>
+            <button class="deco-btn" style="padding: 8px 20px; font-size: 12px;" (click)="startCreateTampermonkeyScript()">
+              New UserScript
+            </button>
           </div>
           
           <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 13px;">
@@ -787,14 +778,42 @@
                 <button class="deco-btn" style="padding: 6px 15px; font-size: 11px; flex-grow: 1;" (click)="oneClickInstall(s.name)">
                   One-Click Install
                 </button>
+                <button class="deco-btn" style="padding: 6px 12px; font-size: 11px;" (click)="selectTampermonkeyScript(s.name)">
+                  Edit
+                </button>
+                <button class="deco-btn deco-btn-outline" style="padding: 6px 12px; font-size: 11px; border-color: #ff5555; color: #ff5555;" (click)="deleteTampermonkeyScript(s.name)">
+                  ✕
+                </button>
               </div>
             </div>
 
             <div *ngIf="tampermonkeyScripts.length === 0" style="grid-column: span 3; text-align: center; color: var(--text-secondary); padding: 40px;">
-              No Tampermonkey scripts (.user.js) found.
+              No Tampermonkey scripts (.user.js) found. Click "New UserScript" to add one!
+            </div>
+          </div>
+        </div>
+
+        <!-- View 2: Editor -->
+        <div class="deco-card" *ngIf="tampermonkeyEditMode">
+          <div class="deco-card-title">
+            <span>Editing UserScript: {{ activeTampermonkeyScriptName || 'New Script' }}</span>
+            <div style="display: flex; gap: 10px;">
+              <button class="deco-btn" style="padding: 6px 15px; font-size: 11px;" (click)="saveTampermonkeyScript()">Save changes</button>
+              <button class="deco-btn deco-btn-outline" style="padding: 6px 15px; font-size: 11px;" (click)="exitTampermonkeyEditor()">Exit Editor</button>
             </div>
           </div>
 
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="form-group">
+              <label class="form-label">Script File Name (will automatically end with .user.js)</label>
+              <input type="text" class="form-control" [(ngModel)]="tampermonkeyScriptNameInput" [disabled]="!tampermonkeyScriptIsNew" placeholder="my_script.user.js">
+            </div>
+
+            <div class="form-group" style="flex-grow: 1; display: flex; flex-direction: column;">
+              <label class="form-label">Code Editor</label>
+              <textarea class="code-textarea" style="height: 450px; font-family: monospace; font-size: 13px;" [(ngModel)]="activeTampermonkeyCode" placeholder="Write UserScript here..."></textarea>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -819,7 +838,6 @@
               <ul class="wiki-list">
                 <li class="wiki-list-item" *ngFor="let art of wikiArticles" [class.active]="art === activeWikiArticle" (click)="loadWikiArticle(art)">
                   <span>{{ art }}</span>
-                  <span>📄</span>
                 </li>
               </ul>
             </div>
@@ -871,7 +889,7 @@
 
           <div style="text-align: center; margin-top: 20px;">
             <button class="deco-btn" (click)="saveSettings()">
-              ⚡ Save Credentials
+              Save Credentials
             </button>
           </div>
         </div>
