@@ -1,6 +1,7 @@
 import { AbstractParser } from './abstract-parser.js';
 import ExcelJS from 'exceljs';
 import path from 'path';
+import XLSX from 'xlsx';
 
 // Re-implementation of Python's difflib.SequenceMatcher ratio
 function getMatchingBlocks(a, b) {
@@ -94,15 +95,35 @@ function parseDateSafe(val) {
   return null;
 }
 
-function getCellValue(cell) {
-  if (!cell) return '';
-  const val = cell.value;
-  if (val && typeof val === 'object') {
-    if (val.result !== undefined) return val.result;
-    if (val.richText) return val.richText.map(t => t.text || '').join('');
-    if (val.text) return val.text;
-  }
-  return val !== undefined && val !== null ? val : '';
+// Read sheet rows using SheetJS (supports both .xls and .xlsx formats)
+function readSheetRowsSafe(filePath) {
+  const wb = XLSX.readFile(filePath, { cellDates: true });
+  if (wb.SheetNames.length === 0) return [];
+  const sheetName = wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+}
+
+// Robust Column Matches for Staff
+function findStaffNameCol(headers) {
+  const list = ['employee name', 'name', 'фио', 'имя', 'сотрудник'];
+  return headers.findIndex(h => list.includes(String(h || '').trim().toLowerCase()));
+}
+
+function findStaffIdCol(headers) {
+  const list = ['employee id', 'id', 'id сотрудника', 'id сотрудника (altegio)', 'staffer_id'];
+  return headers.findIndex(h => list.includes(String(h || '').trim().toLowerCase()));
+}
+
+// Robust Column Matches for Services
+function findServiceNameCol(headers) {
+  const list = ['название', 'имя', 'name', 'название услуги', 'service name', 'service_name'];
+  return headers.findIndex(h => list.includes(String(h || '').trim().toLowerCase()));
+}
+
+function findServiceIdCol(headers) {
+  const list = ['id', 'service id', 'id услуги', 'service_id'];
+  return headers.findIndex(h => list.includes(String(h || '').trim().toLowerCase()));
 }
 
 export class BooksyParser extends AbstractParser {
@@ -121,33 +142,28 @@ export class BooksyParser extends AbstractParser {
     }
 
     log('Loading Bookings workbook...');
-    const bookingsWb = new ExcelJS.Workbook();
-    await bookingsWb.xlsx.readFile(bookingsPath);
-    const bookingsWs = bookingsWb.getWorksheet(1);
+    const bookingsRowsData = readSheetRowsSafe(bookingsPath);
+    if (bookingsRowsData.length === 0) {
+      throw new Error('Bookings file is empty or corrupt.');
+    }
 
     log('Loading Staff workbook...');
-    const staffWb = new ExcelJS.Workbook();
-    await staffWb.xlsx.readFile(staffPath);
-    const staffWs = staffWb.getWorksheet(1);
+    const staffRowsData = readSheetRowsSafe(staffPath);
 
     log('Loading Services workbook...');
-    const servicesWb = new ExcelJS.Workbook();
-    await servicesWb.xlsx.readFile(servicesPath);
-    const servicesWs = servicesWb.getWorksheet(1);
+    const servicesRowsData = readSheetRowsSafe(servicesPath);
 
     // 1. Parse Staff dictionary Name -> ID
     log('Extracting staff list...');
     const staffList = [];
     const staffMap = {};
-    let staffHeaders = [];
-    staffWs.eachRow((row, rowNum) => {
-      const vals = row.values;
-      if (rowNum === 1) {
-        staffHeaders = Array.isArray(vals) ? vals.map(v => String(v || '').trim()) : [];
-      } else {
-        const nameIdx = staffHeaders.indexOf('Name');
-        const idIdx = staffHeaders.indexOf('ID');
-        if (nameIdx !== -1 && idIdx !== -1) {
+    if (staffRowsData.length > 0) {
+      const staffHeaders = staffRowsData[0].map(v => String(v || '').trim());
+      const nameIdx = findStaffNameCol(staffHeaders);
+      const idIdx = findStaffIdCol(staffHeaders);
+      if (nameIdx !== -1 && idIdx !== -1) {
+        for (let rowNum = 1; rowNum < staffRowsData.length; rowNum++) {
+          const vals = staffRowsData[rowNum];
           const name = String(vals[nameIdx] || '').trim();
           const id = String(vals[idIdx] || '').trim();
           if (name && name.toLowerCase() !== 'nan') {
@@ -156,22 +172,20 @@ export class BooksyParser extends AbstractParser {
           }
         }
       }
-    });
+    }
     log(`Found ${staffList.length} staff members.`);
 
     // 2. Parse Services dictionary Имя -> ID
     log('Extracting services list...');
     const servicesList = [];
     const servicesMap = {};
-    let servicesHeaders = [];
-    servicesWs.eachRow((row, rowNum) => {
-      const vals = row.values;
-      if (rowNum === 1) {
-        servicesHeaders = Array.isArray(vals) ? vals.map(v => String(v || '').trim()) : [];
-      } else {
-        const nameIdx = servicesHeaders.indexOf('Имя');
-        const idIdx = servicesHeaders.indexOf('ID');
-        if (nameIdx !== -1 && idIdx !== -1) {
+    if (servicesRowsData.length > 0) {
+      const servicesHeaders = servicesRowsData[0].map(v => String(v || '').trim());
+      const nameIdx = findServiceNameCol(servicesHeaders);
+      const idIdx = findServiceIdCol(servicesHeaders);
+      if (nameIdx !== -1 && idIdx !== -1) {
+        for (let rowNum = 1; rowNum < servicesRowsData.length; rowNum++) {
+          const vals = servicesRowsData[rowNum];
           const name = String(vals[nameIdx] || '').trim();
           const id = String(vals[idIdx] || '').trim();
           if (name && name.toLowerCase() !== 'nan') {
@@ -180,32 +194,27 @@ export class BooksyParser extends AbstractParser {
           }
         }
       }
-    });
+    }
     log(`Found ${servicesList.length} services.`);
 
     // 3. Process Bookings
     log('Processing bookings data...');
-    const bookingsHeaders = [];
-    const firstRow = bookingsWs.getRow(1);
-    firstRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-      bookingsHeaders[colNumber] = cell.value ? String(cell.value).trim() : '';
-    });
-
+    const bookingsHeaders = bookingsRowsData[0].map(v => String(v || '').trim());
     const bookingsRows = [];
     const newCols = ['staffer_ID', 'service_ID', 'duration', 'paid', 'method', 'match'];
 
-    bookingsWs.eachRow((row, rowNum) => {
-      if (rowNum === 1) return;
+    for (let rowNum = 1; rowNum < bookingsRowsData.length; rowNum++) {
+      const vals = bookingsRowsData[rowNum];
       const rowObj = {};
       newCols.forEach(col => rowObj[col] = '');
 
       bookingsHeaders.forEach((header, colIdx) => {
         if (header) {
-          rowObj[header] = getCellValue(row.getCell(colIdx));
+          rowObj[header] = vals[colIdx] !== undefined && vals[colIdx] !== null ? vals[colIdx] : '';
         }
       });
       bookingsRows.push(rowObj);
-    });
+    }
 
     log(`Total bookings rows to process: ${bookingsRows.length}`);
 

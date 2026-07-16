@@ -85,7 +85,6 @@ export class App implements OnInit, AfterViewInit {
   selectedMatchFile: File | null = null;
 
   // Configuration options (per-tab company IDs)
-  booksyCompanyId: string = '1299847';
   dikidiCompanyId: string = '1299847';
   zapisCompanyId: string = '1299847';
   clientsCompanyId: string = '1299847';
@@ -255,7 +254,6 @@ export class App implements OnInit, AfterViewInit {
         if (data['user_token']) this.userToken = data['user_token'];
         if (data['company_id']) {
           const cid = data['company_id'];
-          this.booksyCompanyId = cid;
           this.dikidiCompanyId = cid;
           this.zapisCompanyId = cid;
           this.clientsCompanyId = cid;
@@ -268,11 +266,11 @@ export class App implements OnInit, AfterViewInit {
   }
 
   saveSettings() {
-    // Save tokens and the booksyCompanyId as the default company_id in settings
+    // Save tokens and the clientsCompanyId as the default company_id in settings
     this.http.post('/api/settings', {
       api_token: this.apiToken,
       user_token: this.userToken,
-      company_id: this.booksyCompanyId
+      company_id: this.clientsCompanyId
     }).subscribe({
       next: () => {
         alert('Credentials successfully saved to SQLite database.');
@@ -362,7 +360,6 @@ export class App implements OnInit, AfterViewInit {
       if (this.selectedStaffFile) formData.append('staffFile', this.selectedStaffFile);
       if (this.selectedServicesFile) formData.append('servicesFile', this.selectedServicesFile);
       formData.append('threshold', String(this.booksyThreshold));
-      formData.append('companyId', this.booksyCompanyId);
     } else if (type === 'Dikidi') {
       if (this.selectedDikidiVisitsFile) formData.append('visitsFile', this.selectedDikidiVisitsFile);
       if (this.selectedWorksheetFile) formData.append('worksheetFile', this.selectedWorksheetFile);
