@@ -201,7 +201,7 @@ export class App implements OnInit, AfterViewInit {
   wikiIsNew: boolean = false;
   parsedWikiHtml: string = '';
 
-  @ViewChild('simulationIframe') iframeRef!: ElementRef<HTMLIFrameElement>;
+  @ViewChild('simulationIframe') iframeRef?: ElementRef<HTMLIFrameElement>;
   @ViewChild('logContainer') logContainerRef!: ElementRef<HTMLDivElement>;
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
@@ -605,104 +605,63 @@ export class App implements OnInit, AfterViewInit {
   resetSimulationSandbox() {
     if (!this.iframeRef) return;
     const iframe = this.iframeRef.nativeElement;
-    
-    const mockDOM = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; background: #fafafa; color: #333; margin: 0; }
-          .widget-container { border: 1px solid #dddddd; padding: 18px; border-radius: 12px; background: white; max-width: 360px; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-          .form-input__title { font-weight: 600; font-size: 12px; color: #666; margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-          .time-interval { display: inline-block; padding: 6px 12px; border: 1px solid #c5a059; border-radius: 6px; font-weight: bold; font-size: 13px; margin: 4px; color: #c5a059; cursor: pointer; text-align: center; }
-          .any-staff-icon-container { width: 36px; height: 36px; border-radius: 50%; background: #e5c17d; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; }
-          .any-staff-icon { font-size: 15px; color: white; font-weight: bold; }
-          .order-tag.success { padding: 12px; border-radius: 8px; margin-top: 15px; background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; display: flex; align-items: center; gap: 8px; }
-          .order-actions { margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px; }
-          [data-locator="service_price"] { font-weight: 700; color: #292b33; font-size: 13px; }
-          [data-locator="master_name"] { font-weight: bold; font-size: 14px; color: #292b33; }
-        </style>
-      </head>
-      <body>
-        <div class="widget-container">
-          <div style="font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Altegio Simulated Widget</div>
-          
-          <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 8px; border: 1px solid #f0f0f0; border-radius: 8px;">
-            <div class="any-staff-icon-container">
-              <span class="any-staff-icon"></span>
-            </div>
-            <div>
-              <div data-locator="master_name">Любой специалист</div>
-              <small style="color: #999;">Select employee</small>
-            </div>
-          </div>
-
-          <div style="margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9f9f9;">
-              <span style="font-size: 13px;">Стрижка мужская</span>
-              <span data-locator="service_price">8,000&nbsp;₸</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9f9f9;" data-locator="service_item_EXCLUDED_ID_1">
-              <span style="font-size: 13px;">Окрашивание волос (Исключение)</span>
-              <span data-locator="service_price">15,000&nbsp;₸</span>
-            </div>
-          </div>
-
-          <div style="margin-bottom: 15px;">
-            <span class="form-input__title" data-locator="whatsapp_notice_field_placeholder">Phone *</span>
-            <input type="text" class="form-input__input" value="+7 (701) 555-12-34" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 13px;">
-          </div>
-
-          <div style="margin-bottom: 15px;">
-            <span class="form-input__title">Available Slots</span>
-            <div class="time-interval">10:00</div>
-            <div class="time-interval">10:05</div>
-            <div class="time-interval">10:30</div>
-          </div>
-
-          <div class="order-actions">
-            <div class="order-tag success">
-              <span data-locator="success_icon"></span>
-              <span data-locator="created_booking_page_title">Запись успешно создана!</span>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(mockDOM);
-      doc.close();
-    }
+    iframe.src = '/api/widget-simulator-host';
   }
 
   runSimulation() {
     if (!this.iframeRef || !this.activeCode) return;
-    this.resetSimulationSandbox(); // Reset first
 
-    const iframe = this.iframeRef.nativeElement;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (doc) {
-      const scriptNode = doc.createElement('script');
-      scriptNode.type = 'text/javascript';
-      
-      let executable = this.activeCode;
-      if (executable.trim().startsWith('<script>')) {
-        executable = executable.replace(/<script>/g, '').replace(/<\/script>/g, '');
-      }
-      
-      const styleMatches = [...this.activeCode.matchAll(/<style>([\s\S]*?)<\/style>/g)];
-      styleMatches.forEach(m => {
+    const inject = () => {
+      const iframe = this.iframeRef.nativeElement;
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc || !doc.body) return;
+
+      // Clean up previous simulation injections
+      doc.querySelectorAll('[data-sc-injected]').forEach(el => el.remove());
+
+      const code = this.activeCode;
+
+      // 1. Extract and inject <style> blocks — use fresh spread to avoid lastIndex state bug
+      const styleMatches = [...code.matchAll(/<style>([\s\S]*?)<\/style>/gi)];
+      for (const m of styleMatches) {
         const styleNode = doc.createElement('style');
+        styleNode.setAttribute('data-sc-injected', '');
         styleNode.textContent = m[1];
         doc.head.appendChild(styleNode);
-      });
+      }
 
-      scriptNode.textContent = executable;
-      doc.body.appendChild(scriptNode);
+      // Strip style blocks from remaining code
+      let codeToRun = code.replace(/<style>[\s\S]*?<\/style>/gi, '');
+
+      // 2. Extract and inject <script> blocks
+      const scriptMatches = [...codeToRun.matchAll(/<script(?:[^>]*)>([\s\S]*?)<\/script>/gi)];
+      if (scriptMatches.length > 0) {
+        for (const m of scriptMatches) {
+          const scriptNode = doc.createElement('script');
+          scriptNode.type = 'text/javascript';
+          scriptNode.setAttribute('data-sc-injected', '');
+          scriptNode.textContent = m[1];
+          doc.body.appendChild(scriptNode);
+        }
+      } else {
+        // 3. No script tags — treat entire (stripped) content as raw JS
+        const stripped = codeToRun.trim();
+        if (stripped) {
+          const scriptNode = doc.createElement('script');
+          scriptNode.type = 'text/javascript';
+          scriptNode.setAttribute('data-sc-injected', '');
+          scriptNode.textContent = stripped;
+          doc.body.appendChild(scriptNode);
+        }
+      }
+    };
+
+    const iframe = this.iframeRef.nativeElement;
+    // If the iframe hasn't fully loaded yet, wait; otherwise inject immediately
+    if (!iframe.contentDocument || iframe.contentDocument.readyState === 'loading') {
+      iframe.onload = () => { inject(); iframe.onload = null; };
+    } else {
+      inject();
     }
   }
 

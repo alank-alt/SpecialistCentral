@@ -34,3 +34,16 @@ uploads/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Obsidian workspace metadata
+.obsidian/
+
+# Vim/editor swap & backup files
+*.un~
+*.~
+
+# Docker Compose backup
+docker-compose.yml~
+
+# Project Codex
+Project Codex - Art-Deco Automation Hub.md

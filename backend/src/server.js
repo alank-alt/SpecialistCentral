@@ -977,6 +977,209 @@ app.get('/scripts/download/:name', (req, res) => {
   }
 });
 
+// --- LIVE WIDGET SIMULATOR PROXY API ---
+app.get('/api/widget-proxy', async (req, res) => {
+  try {
+    const response = await fetch('https://b1385950.alteg.io/');
+    let html = await response.text();
+
+    const injectionScript = `
+      <script>
+        (function() {
+          // Intercept fetch
+          const originalFetch = window.fetch;
+          window.fetch = async function(input, init) {
+            let url = typeof input === 'string' ? input : (input && input.url);
+            if (url && (url.includes('alteg.io') || url.startsWith('/')) && 
+                !url.includes('chunk-') && !url.includes('polyfills') && 
+                !url.includes('main-') && !url.includes('styles-') && !url.includes('media/')) {
+              const targetUrl = new URL(url, 'https://b1385950.alteg.io').href;
+              const proxyUrl = '/api/widget-proxy/request?url=' + encodeURIComponent(targetUrl);
+              if (typeof input === 'string') {
+                input = proxyUrl;
+              } else if (input) {
+                input = new Request(proxyUrl, input);
+              }
+            }
+            return originalFetch.call(this, input, init);
+          };
+
+          // Intercept XMLHttpRequest
+          const originalOpen = XMLHttpRequest.prototype.open;
+          XMLHttpRequest.prototype.open = function(method, url, ...args) {
+            if (url && (url.includes('alteg.io') || url.startsWith('/')) && 
+                !url.includes('chunk-') && !url.includes('polyfills') && 
+                !url.includes('main-') && !url.includes('styles-') && !url.includes('media/')) {
+              const targetUrl = new URL(url, 'https://b1385950.alteg.io').href;
+              url = '/api/widget-proxy/request?url=' + encodeURIComponent(targetUrl);
+            }
+            return originalOpen.call(this, method, url, ...args);
+          };
+        })();
+      </script>
+    `;
+
+    // Inject same-origin overrides
+    html = html.replace('<head>', '<head>\n' + injectionScript);
+
+    // Modify base href to load static assets from Altegio CDN
+    html = html.replace('<base href="/">', '<base href="https://b1385950.alteg.io/">');
+
+    res.send(html);
+  } catch (err) {
+    res.status(500).send('Error loading widget proxy: ' + err.message);
+  }
+});
+
+app.all('/api/widget-proxy/request', async (req, res) => {
+  const { url } = req.query;
+  if (!url) {
+    return res.status(400).send('Missing url parameter');
+  }
+
+  try {
+    const headers = {};
+    const safeHeaders = ['accept', 'accept-language', 'content-type', 'user-agent', 'authorization'];
+    for (const [key, value] of Object.entries(req.headers)) {
+      const lowerKey = key.toLowerCase();
+      if (safeHeaders.includes(lowerKey) || lowerKey.startsWith('x-')) {
+        headers[key] = value;
+      }
+    }
+
+    headers['origin'] = 'https://b1385950.alteg.io';
+    headers['referer'] = 'https://b1385950.alteg.io/';
+
+    const options = {
+      method: req.method,
+      headers: headers,
+    };
+
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body && Object.keys(req.body).length > 0) {
+      options.body = JSON.stringify(req.body);
+    }
+
+    const response = await fetch(url, options);
+
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
+        res.setHeader(key, value);
+      }
+    });
+
+    res.status(response.status);
+    const body = await response.arrayBuffer();
+    res.send(Buffer.from(body));
+  } catch (err) {
+    res.status(500).send('Proxy error: ' + err.message);
+  }
+});
+
+app.get('/api/widget-simulator-host', (req, res) => {
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Specialist Central - Widget Simulator Host</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f0f12;
+      color: #e4e4e7;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .container {
+      max-width: 600px;
+      padding: 40px;
+      border: 1px solid #27272a;
+      border-radius: 16px;
+      background: #18181b;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-top: 0;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+    p {
+      color: #a1a1aa;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .demo-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: #c5a059;
+      color: #000;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+    }
+    .ms-button, .ms_booking {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #c5a059;
+      color: #121214;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .ms-button:hover, .ms_booking:hover {
+      background: #d4b26f;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="demo-badge">Simulator Host Page</div>
+    <h1>Specialist Central Salon</h1>
+    <p>This is a simulated host page representing the client website where the Altegio widget is integrated. You can interact with the default floating button or the custom booking button below.</p>
+    
+    <button class="ms-button" data-url="https://b1385950.alteg.io/">Book Online (ms-button)</button>
+  </div>
+
+  <script type="text/javascript" src="/api/widget-integration-script" charset="UTF-8"></script>
+</body>
+</html>`;
+  res.send(html);
+});
+
+app.get('/api/widget-integration-script', async (req, res) => {
+  try {
+    const response = await fetch('https://w1385950.alteg.io/widgetJS');
+    let js = await response.text();
+
+    // Do NOT rewrite the booking iframe href — let it load the real Altegio booking app.
+    // The host page is same-origin, so injected scripts can target host-level elements
+    // (floating button .yButton, modal wrapper .yWidgetBlock-altegio, close icon .yCloseIcon, etc.)
+
+    res.setHeader('Content-Type', 'application/javascript');
+    res.send(js);
+  } catch (err) {
+    res.status(500).send('Error loading integration script: ' + err.message);
+  }
+});
+
 // --- KNOWLEDGE BASE (WIKI) API ---
 app.get('/api/wiki/list', (req, res) => {
   try {

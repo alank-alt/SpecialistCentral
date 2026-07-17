@@ -169,5 +169,10 @@
             window.history.pushState({ path: cleanUrl }, '', cleanUrl);
         }
     };
+
+    // Auto-show on load if consent not yet given
+    if (!localStorage.getItem('custom-legal-notice-accepted')) {
+        showConsentModal();
+    }
   })();
 </script>

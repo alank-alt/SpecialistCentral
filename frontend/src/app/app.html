@@ -669,7 +669,7 @@
             </div>
             
             <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 25px;">
-              Manage scripts meant for custom online booking widget modifications. Select a script to edit or simulate.
+              Manage scripts for custom online booking widget modifications. Select a script to edit.
             </p>
 
             <div class="grid-2">
@@ -683,7 +683,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                   <button class="deco-btn" style="padding: 6px 15px; font-size: 11px; flex-grow: 1;" (click)="selectWidgetScript(s.name)">
-                    Open Editor & Simulate
+                    Edit
                   </button>
                   <button class="deco-btn deco-btn-outline" style="padding: 6px 12px; font-size: 11px; border-color: #ff5555; color: #ff5555;" (click)="deleteWidgetScript(s.name)">
                     ✕
@@ -707,37 +707,20 @@
               </div>
             </div>
 
-            <div class="split-viewer">
-              <!-- Left: Code Editor Input fields -->
-              <div class="code-section">
-                <div class="form-group">
-                  <label class="form-label">Script File Name (must end with .html or .js)</label>
-                  <input type="text" class="form-control" [(ngModel)]="widgetScriptNameInput" [disabled]="!widgetScriptIsNew" placeholder="custom_feature.html">
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <label class="form-label" style="margin-bottom: 0;">Code Editor</label>
-                  <div style="display: flex; gap: 8px;">
-                    <button class="deco-btn" style="padding: 4px 12px; font-size: 10px;" (click)="copyCodeToClipboard()">Copy</button>
-                    <button class="deco-btn" style="padding: 4px 12px; font-size: 10px;" (click)="runSimulation()">Run Simulation</button>
-                  </div>
-                </div>
-                
-                <textarea class="code-textarea" [(ngModel)]="activeCode" placeholder="Write Javascript/HTML here..."></textarea>
+            <div style="display: flex; flex-direction: column; gap: 0;">
+              <div class="form-group">
+                <label class="form-label">Script File Name (must end with .html or .js)</label>
+                <input type="text" class="form-control" [(ngModel)]="widgetScriptNameInput" [disabled]="!widgetScriptIsNew" placeholder="custom_feature.html">
               </div>
 
-              <!-- Right: Simulated widget iframe -->
-              <div class="simulation-section">
-                <label class="form-label">Altegio Simulated Widget Sandbox</label>
-                
-                <div class="simulation-frame-container">
-                  <iframe #simulationIframe class="simulation-iframe"></iframe>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label class="form-label" style="margin-bottom: 0;">Code Editor</label>
+                <div style="display: flex; gap: 8px;">
+                  <button class="deco-btn" style="padding: 4px 12px; font-size: 10px;" (click)="copyCodeToClipboard()">Copy</button>
                 </div>
-                
-                <p style="font-size: 11px; color: var(--text-secondary); margin-top: 10px; line-height: 1.4;">
-                  Direct DOM execution. Edit the left panel and click **Run Simulation** to execute instantly against mock selectors.
-                </p>
               </div>
+
+              <textarea class="code-textarea" [(ngModel)]="activeCode" placeholder="Write Javascript/HTML here..." style="min-height: 420px;"></textarea>
             </div>
           </div>
 
